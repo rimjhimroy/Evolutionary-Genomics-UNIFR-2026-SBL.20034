@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.475">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>readme_practical1</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="README_Practical1_files/libs/clipboard/clipboard.min.js"></script>
+<script src="README_Practical1_files/libs/quarto-html/quarto.js"></script>
+<script src="README_Practical1_files/libs/quarto-html/popper.min.js"></script>
+<script src="README_Practical1_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="README_Practical1_files/libs/quarto-html/anchor.min.js"></script>
+<link href="README_Practical1_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="README_Practical1_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="README_Practical1_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="README_Practical1_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="README_Practical1_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+<section id="practical-1-from-fastq-to-snps-a-resequencing-workflow" class="level1">
+<h1>Practical 1 — From FASTQ to SNPs: a resequencing workflow</h1>
+<p>This practical is a <strong>basic end-to-end short-read resequencing workflow</strong>:</p>
+<ol type="1">
+<li>inspect FASTQ files</li>
+<li>run QC with FastQC and MultiQC</li>
+<li>trim reads with fastp</li>
+<li>map reads to the regional reference</li>
+<li>check alignment depth and coverage</li>
+<li>call variants per sample with GATK HaplotypeCaller</li>
+<li>joint-genotype all samples with GenomicsDBImport and GenotypeGVCFs</li>
+<li>optionally inspect the provided regional VCF</li>
+</ol>
+<p>This tutorial uses a <strong>small subset of a real WGS dataset</strong> from the species <strong>Biscutella laevigata</strong>, sampled from <strong>lowland</strong> and <strong>high-elevation</strong> populations.</p>
+<section id="what-you-are-given-in-this-tutorial" class="level2">
+<h2 class="anchored" data-anchor-id="what-you-are-given-in-this-tutorial">What you are given in this tutorial</h2>
+<p>The tutorial dataset provides:</p>
+<ul>
+<li><strong>Two paired-end samples</strong> (i.e., two samples × R1/R2 FASTQs)</li>
+<li><strong>One reference genome</strong> (FASTA)</li>
+<li>A <strong>gene annotation</strong> file (GFF/GFF3)</li>
+<li>A <strong>BED file of 4-fold degenerate sites</strong> (so you don’t need to generate them from scratch)</li>
+</ul>
+<p>Suggested folder layout (adjust names to whatever you were given):</p>
+<pre class="text"><code>dataset-tutorial1/reads/                 # FASTQ(.gz) for the two samples
+dataset-tutorial1/ref/genome.fa          # reference FASTA
+dataset-tutorial1/ref/genes.gff3         # annotation
+dataset-tutorial1/ref/4fold.bed          # provided 4-fold sites (BED)</code></pre>
+</section>
+<section id="sample-details" class="level2">
+<h2 class="anchored" data-anchor-id="sample-details">Sample details</h2>
+<p>At the start of the practical, identify the sample names directly from the FASTQ files.</p>
+<p>Each sample should have:</p>
+<ul>
+<li>one <code>R1</code> file</li>
+<li>one <code>R2</code> file</li>
+<li>the same sample name before <code>_R1</code> or <code>_R2</code></li>
+</ul>
+<p>For example, if you have:</p>
+<ul>
+<li><code>reads/sample1_R1.fastq.gz</code></li>
+<li><code>reads/sample1_R2.fastq.gz</code></li>
+</ul>
+<p>then the sample name is <code>sample1</code>.</p>
+<p>List all samples:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> dataset-tutorial1/reads/<span class="pp">*</span>_R1.fastq.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>If you want just the sample names:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r1 <span class="kw">in</span> dataset-tutorial1/reads/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">basename</span> <span class="st">"</span><span class="va">$r1</span><span class="st">"</span> _R1.fastq.gz</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The same sample-name pattern is used throughout the tutorial loops below.</p>
+</section>
+<section id="vs-code-defaults-in-the-renku-image" class="level2">
+<h2 class="anchored" data-anchor-id="vs-code-defaults-in-the-renku-image">VS Code defaults in the Renku image</h2>
+<p>In this Renku image, <code>Ctrl+Enter</code> is set to run <code>Terminal: Run Selected Text in Active Terminal</code>.</p>
+<p>If that shortcut stops working in an existing session, run the same command once from the command palette or restart the Renku session.</p>
+<hr>
+</section>
+<section id="fastq-what-it-is" class="level2">
+<h2 class="anchored" data-anchor-id="fastq-what-it-is">1) FASTQ: what it is</h2>
+<p>A FASTQ file stores sequencing reads:</p>
+<ul>
+<li><strong>Sequence</strong> (A/C/G/T/N)</li>
+<li><strong>Quality scores</strong> per base (Phred scores)</li>
+</ul>
+<p>The Phred score <span class="math inline">\(Q\)</span> relates to the probability of an incorrect base call <span class="math inline">\(p\)</span>:</p>
+<p><span class="math display">\[Q = -10 \log_{10}(p)\]</span></p>
+<p>So:</p>
+<ul>
+<li><span class="math inline">\(Q20 \Rightarrow p \approx 1\%\)</span></li>
+<li><span class="math inline">\(Q30 \Rightarrow p \approx 0.1\%\)</span></li>
+</ul>
+<p>Paired-end reads usually come as:</p>
+<ul>
+<li><code>sample_R1.fastq.gz</code></li>
+<li><code>sample_R2.fastq.gz</code></li>
+</ul>
+<section id="inspecting-a-fastq-file" class="level3">
+<h3 class="anchored" data-anchor-id="inspecting-a-fastq-file">Inspecting a FASTQ file</h3>
+<p>Before running any analysis, it’s good practice to open a FASTQ file and check its contents to understand the format and verify the data. You can use <code>less</code>, <code>head</code>, or any text editor to view the file. For example:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> dataset-tutorial1/reads/sample1_R1.fastq.gz <span class="kw">|</span> <span class="fu">head</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Look for the four-line FASTQ structure: 1. Sequence identifier (starts with <code>@</code>) 2. Sequence (A/C/G/T/N) 3. Separator line (starts with <code>+</code>) 4. Quality scores (ASCII characters)</p>
+<hr>
+</section>
+</section>
+<section id="qc-of-raw-fastq-fastqc-multiqc" class="level2">
+<h2 class="anchored" data-anchor-id="qc-of-raw-fastq-fastqc-multiqc">2) QC of raw FASTQ (FastQC + MultiQC)</h2>
+<section id="why" class="level3">
+<h3 class="anchored" data-anchor-id="why">Why</h3>
+<p>Before trimming/mapping, you want to know whether problems are:</p>
+<ul>
+<li><strong>Global</strong> (bad sequencing run) or <strong>sample-specific</strong> (library issues)</li>
+<li>Fixable by trimming or filtering</li>
+</ul>
+</section>
+<section id="commands" class="level3">
+<h3 class="anchored" data-anchor-id="commands">Commands</h3>
+<p>For one file:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> results/qc/fastqc</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">fastqc</span> <span class="at">-o</span> results/qc/fastqc dataset-tutorial1/reads/sample_R1.fastq.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For all files:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> results/qc/fastqc</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">fastqc</span> <span class="at">-o</span> results/qc/fastqc <span class="at">-t</span> 4 dataset-tutorial1/reads/<span class="pp">*</span>.fastq.gz</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">multiqc</span> <span class="at">-o</span> results/qc results/qc/fastqc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="key-fastqc-plots-to-understand" class="level3">
+<h3 class="anchored" data-anchor-id="key-fastqc-plots-to-understand">Key FastQC plots to understand</h3>
+<ul>
+<li><strong>Per base sequence quality</strong>: falling quality at 3’ ends is common. Official FastQC help: <a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/2%20Per%20Base%20Sequence%20Quality.html">Per Base Sequence Quality</a></li>
+<li><strong>Adapter content</strong>: adapters indicate reads are longer than inserts. Official FastQC help: <a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/10%20Adapter%20Content.html">Adapter Content</a></li>
+<li><strong>Per sequence GC content</strong>: odd shapes can indicate contamination. Official FastQC help: <a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/5%20Per%20Sequence%20GC%20Content.html">Per Sequence GC Content</a></li>
+<li><strong>Overrepresented sequences</strong>: adapters, primers, rRNA, contamination. Official FastQC help: <a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/9%20Overrepresented%20Sequences.html">Overrepresented Sequences</a></li>
+<li><strong>Sequence duplication levels</strong>: can be normal (high depth) or PCR artifacts. Official FastQC help: <a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html">Sequence Duplication Levels</a></li>
+</ul>
+</section>
+<section id="red-flags" class="level3">
+<h3 class="anchored" data-anchor-id="red-flags">Red flags</h3>
+<ul>
+<li>Very low median quality across read length (not just 3’ tail)</li>
+<li>Strong adapter content early in reads</li>
+<li>GC profile wildly different from expectation (contamination)</li>
+<li>Many reads very short <em>before</em> any trimming (library degradation)</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="trimming-and-filtering-fastp" class="level2">
+<h2 class="anchored" data-anchor-id="trimming-and-filtering-fastp">3) Trimming and filtering (fastp)</h2>
+<section id="why-trimming-is-needed" class="level3">
+<h3 class="anchored" data-anchor-id="why-trimming-is-needed">Why trimming is needed</h3>
+<p>Trimming/filters can:</p>
+<ul>
+<li>Remove <strong>adapter sequences</strong></li>
+<li>Remove <strong>low-quality tails</strong> that cause mismatches in mapping</li>
+<li>Filter out <strong>very short</strong> reads that map ambiguously</li>
+</ul>
+<p>This typically improves:</p>
+<ul>
+<li>Mapping rate</li>
+<li>Variant calling specificity</li>
+<li>Downstream QC consistency</li>
+</ul>
+</section>
+<section id="example-command" class="level3">
+<h3 class="anchored" data-anchor-id="example-command">Example command</h3>
+<p>For one sample:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> results/trimmed results/unpaired results/fastp_reports</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">fastp</span> <span class="dt">\</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> dataset-tutorial1/reads/sample_R1.fastq.gz <span class="dt">\</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-I</span> dataset-tutorial1/reads/sample_R2.fastq.gz <span class="dt">\</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-o</span> results/trimmed/sample_R1.trim.fastq.gz <span class="dt">\</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-O</span> results/trimmed/sample_R2.trim.fastq.gz <span class="dt">\</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--unpaired1</span> results/unpaired/sample_R1.unpaired.fastq.gz <span class="dt">\</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">--unpaired2</span> results/unpaired/sample_R2.unpaired.fastq.gz <span class="dt">\</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">--detect_adapter_for_pe</span> <span class="dt">\</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cut_front</span> <span class="at">--cut_tail</span> <span class="dt">\</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cut_window_size</span> 4 <span class="at">--cut_mean_quality</span> 20 <span class="dt">\</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">--length_required</span> 50 <span class="dt">\</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">--thread</span> 4 <span class="dt">\</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">--html</span> results/fastp_reports/sample.fastp.html <span class="dt">\</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">--json</span> results/fastp_reports/sample.fastp.json</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For all samples:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> results/trimmed results/unpaired results/fastp_reports</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r1 <span class="kw">in</span> dataset-tutorial1/reads/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="va">sample</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">"</span><span class="va">$r1</span><span class="st">"</span> _R1.fastq.gz<span class="va">)</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="va">r2</span><span class="op">=</span><span class="st">"dataset-tutorial1/reads/</span><span class="va">${sample}</span><span class="st">_R2.fastq.gz"</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Trimming </span><span class="va">${sample}</span><span class="st">"</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="ex">fastp</span> <span class="dt">\</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">-i</span> <span class="st">"</span><span class="va">$r1</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">-I</span> <span class="st">"</span><span class="va">$r2</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">-o</span> <span class="st">"results/trimmed/</span><span class="va">${sample}</span><span class="st">_R1.trim.fastq.gz"</span> <span class="dt">\</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">-O</span> <span class="st">"results/trimmed/</span><span class="va">${sample}</span><span class="st">_R2.trim.fastq.gz"</span> <span class="dt">\</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">--unpaired1</span> <span class="st">"results/unpaired/</span><span class="va">${sample}</span><span class="st">_R1.unpaired.fastq.gz"</span> <span class="dt">\</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">--unpaired2</span> <span class="st">"results/unpaired/</span><span class="va">${sample}</span><span class="st">_R2.unpaired.fastq.gz"</span> <span class="dt">\</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">--detect_adapter_for_pe</span> <span class="dt">\</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">--cut_front</span> <span class="at">--cut_tail</span> <span class="dt">\</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">--cut_window_size</span> 4 <span class="at">--cut_mean_quality</span> 20 <span class="dt">\</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">--length_required</span> 50 <span class="dt">\</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">--thread</span> 4 <span class="dt">\</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">--html</span> <span class="st">"results/fastp_reports/</span><span class="va">${sample}</span><span class="st">.fastp.html"</span> <span class="dt">\</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">--json</span> <span class="st">"results/fastp_reports/</span><span class="va">${sample}</span><span class="st">.fastp.json"</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="how-to-read-fastp-output" class="level3">
+<h3 class="anchored" data-anchor-id="how-to-read-fastp-output">How to read fastp output</h3>
+<p>fastp produces an <strong>HTML</strong> (human) and <strong>JSON</strong> (machine) report.</p>
+<p>Common metrics:</p>
+<ul>
+<li><strong>Reads passed / failed</strong> filters</li>
+<li><strong>Adapter trimming</strong> counts</li>
+<li><strong>Base quality before vs after</strong></li>
+<li><strong>Read length distribution</strong> after trimming</li>
+<li><strong>Duplication rate</strong> (rough indicator)</li>
+</ul>
+<p>In this example, paired reads stay in <code>trimmed/</code>, while reads whose mate is removed during trimming are written to <code>unpaired/</code>.</p>
+</section>
+<section id="red-flags-1" class="level3">
+<h3 class="anchored" data-anchor-id="red-flags-1">Red flags</h3>
+<ul>
+<li>Large fraction of reads become very short (e.g., most &lt; 50 bp)</li>
+<li>Enormous read loss due to quality filters</li>
+<li>Duplication rate extremely high (PCR duplicates / low-complexity library)</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="mapping-to-a-reference-bwa-mem" class="level2">
+<h2 class="anchored" data-anchor-id="mapping-to-a-reference-bwa-mem">4) Mapping to a reference (BWA-MEM)</h2>
+<section id="why-1" class="level3">
+<h3 class="anchored" data-anchor-id="why-1">Why</h3>
+<p>Mapping assigns reads to coordinates on a reference genome so you can:</p>
+<ul>
+<li>Compute coverage</li>
+<li>Call variants</li>
+<li>Compare individuals at homologous sites</li>
+</ul>
+</section>
+<section id="basic-workflow" class="level3">
+<h3 class="anchored" data-anchor-id="basic-workflow">Basic workflow</h3>
+<ol type="1">
+<li>Index the reference</li>
+<li>Align</li>
+<li>Convert to BAM, sort, index</li>
+<li>Mark duplicates (recommended for variant calling)</li>
+</ol>
+<p>Run for all samples:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="va">REF</span><span class="op">=</span>dataset-tutorial1/ref/ref.fa</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> results/ref results/bam</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> <span class="st">"</span><span class="va">$REF</span><span class="st">"</span> results/ref/ref.fa</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">REF</span><span class="op">=</span>results/ref/ref.fa</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="ex">bwa</span> index <span class="st">"</span><span class="va">$REF</span><span class="st">"</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r1 <span class="kw">in</span> results/trimmed/<span class="pp">*</span>_R1.trim.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="va">sample</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">"</span><span class="va">$r1</span><span class="st">"</span> _R1.trim.fastq.gz<span class="va">)</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="va">r2</span><span class="op">=</span><span class="st">"results/trimmed/</span><span class="va">${sample}</span><span class="st">_R2.trim.fastq.gz"</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Mapping </span><span class="va">${sample}</span><span class="st">"</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="ex">bwa</span> mem <span class="at">-t</span> 8  <span class="at">-R</span> <span class="st">"@RG\tID:</span><span class="va">${sample}</span><span class="st">\tSM:</span><span class="va">${sample}</span><span class="st">\tPL:ILLUMINA\tLB:lib1\tPU:unit1"</span> <span class="dt">\</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"</span><span class="va">$REF</span><span class="st">"</span> <span class="st">"</span><span class="va">$r1</span><span class="st">"</span> <span class="st">"</span><span class="va">$r2</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">|</span> <span class="ex">samtools</span> sort <span class="at">-@</span> 4 <span class="at">-o</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.sorted.bam"</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="ex">samtools</span> index <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.sorted.bam"</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="ex">samtools</span> flagstat <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.sorted.bam"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.flagstat.txt"</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="ex">samtools</span> stats <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.sorted.bam"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.samtools.stats.txt"</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="mark-duplicates-picard" class="level3">
+<h3 class="anchored" data-anchor-id="mark-duplicates-picard">Mark duplicates (Picard)</h3>
+<p>When this should not be done, or should be treated cautiously:</p>
+<ul>
+<li>do not remove duplicates blindly in ddRAD, GBS, or other reduced-representation datasets, where many reads naturally start at the same positions</li>
+<li>do not treat duplicate counts as a simple artifact signal in very high-depth targeted sequencing without checking the library design first</li>
+<li>do not remove duplicates blindly in RNA-seq, where highly expressed transcripts can naturally produce many reads from the same regions and duplicate counts actually reflect biology not just technical artifacts.</li>
+</ul>
+<p>For all samples:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> bam <span class="kw">in</span> results/bam/<span class="pp">*</span>.sorted.bam<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">sample</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> .sorted.bam<span class="va">)</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Marking duplicates for </span><span class="va">${sample}</span><span class="st">"</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="ex">picard</span> MarkDuplicates <span class="dt">\</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    I=<span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    O=<span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.sorted.markdup.bam"</span> <span class="dt">\</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    M=<span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.dup_metrics.txt"</span> <span class="dt">\</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    CREATE_INDEX=true</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="red-flags-2" class="level3">
+<h3 class="anchored" data-anchor-id="red-flags-2">Red flags</h3>
+<ul>
+<li>Low overall mapping rate</li>
+<li>Very high fraction of reads with MAPQ=0 (multi-mapping)</li>
+<li>High duplicate rate (PCR artifacts)</li>
+<li>Strong strand bias / weird insert size distribution</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="coverage-report-samtools" class="level2">
+<h2 class="anchored" data-anchor-id="coverage-report-samtools">5) Coverage report (samtools)</h2>
+<section id="why-coverage-matters" class="level3">
+<h3 class="anchored" data-anchor-id="why-coverage-matters">Why coverage matters</h3>
+<p>Coverage affects:</p>
+<ul>
+<li>Power to call variants</li>
+<li>Confidence (depth, allele balance)</li>
+<li>Missing data rate</li>
+</ul>
+<p>You usually care about:</p>
+<ul>
+<li><strong>Mean depth</strong></li>
+<li><strong>Breadth of coverage</strong> (fraction of genome covered at ≥1× / ≥10×)</li>
+<li><strong>Uniformity</strong> (how even coverage is across the genome)</li>
+</ul>
+</section>
+<section id="quick-depth-summaries-with-samtools" class="level3">
+<h3 class="anchored" data-anchor-id="quick-depth-summaries-with-samtools">Quick depth summaries with samtools</h3>
+<p>For one sample:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-base depth (filtered) using sambamba</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">sambamba</span> depth base <span class="at">-t</span> 4 <span class="at">-c</span> 0 </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-F</span> <span class="st">"mapping_quality &gt; 0 and not (duplicate or failed_quality_control or unmapped or secondary_alignment)"</span> </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ex">-o</span> sample.txt sample.sorted.markdup.bam</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean genome-wide depth</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="at">-e</span> <span class="st">"mean_depth\t</span><span class="va">$(</span><span class="fu">awk</span> <span class="st">'{sum+=$3; n++} END{print (n?sum/n:0)}'</span> sample.txt<span class="va">)</span><span class="st">"</span> <span class="op">&gt;</span> sample.summary.txt</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Breadth of coverage (&gt;0x)</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="at">-e</span> <span class="st">"%_covered_gt0x\t</span><span class="va">$(</span><span class="fu">awk</span> <span class="st">'{c++; if($3&gt;0) total+=1} END{print (total/c)*100}'</span> sample.txt<span class="va">)</span><span class="st">"</span> <span class="op">&gt;&gt;</span> sample.summary.txt</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Breadth of coverage (&gt;10x)</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="at">-e</span> <span class="st">"%_covered_gt10x\t</span><span class="va">$(</span><span class="fu">awk</span> <span class="st">'{c++; if($3&gt;10) total+=1} END{print (total/c)*100}'</span> sample.txt<span class="va">)</span><span class="st">"</span> <span class="op">&gt;&gt;</span> sample.summary.txt</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="co"># BAM alignment statistics</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="ex">bamtools</span> stats <span class="at">-in</span> sample.sorted.markdup.bam <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-v</span> <span class="st">"*"</span> <span class="op">&gt;</span> sample_bamtools_stats.txt</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For all samples:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> bam <span class="kw">in</span> results/bam/<span class="pp">*</span>.sorted.markdup.bam<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">sample</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> .sorted.markdup.bam<span class="va">)</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Summarizing coverage for </span><span class="va">${sample}</span><span class="st">"</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Per-base depth (filtered)</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="ex">sambamba</span> depth base <span class="at">-t</span> 4 <span class="at">-c</span> 0 <span class="dt">\</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">-F</span> <span class="st">"mapping_quality &gt; 0 and not (duplicate or failed_quality_control or unmapped or secondary_alignment)"</span> <span class="dt">\</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">-o</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.depth.txt"</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Mean depth</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="at">-e</span> <span class="st">"mean_depth\t</span><span class="va">$(</span><span class="fu">awk</span> <span class="st">'{sum+=$3; n++} END{print (n?sum/n:0)}'</span> results/bam/<span class="va">${sample}</span>.depth.txt<span class="va">)</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.depth.summary.txt"</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Breadth &gt;0x</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="at">-e</span> <span class="st">"%_covered_gt0x\t</span><span class="va">$(</span><span class="fu">awk</span> <span class="st">'{c++; if($3&gt;0) total+=1} END{print (total/c)*100}'</span> results/bam/<span class="va">${sample}</span>.depth.txt<span class="va">)</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">&gt;&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.depth.summary.txt"</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Breadth &gt;10x</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="at">-e</span> <span class="st">"%_covered_gt10x\t</span><span class="va">$(</span><span class="fu">awk</span> <span class="st">'{c++; if($3&gt;10) total+=1} END{print (total/c)*100}'</span> results/bam/<span class="va">${sample}</span>.depth.txt<span class="va">)</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">&gt;&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.depth.summary.txt"</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># BAM stats</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  <span class="ex">bamtools</span> stats <span class="at">-in</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-v</span> <span class="st">"*"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">_bamtools_stats.txt"</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="red-flags-3" class="level3">
+<h3 class="anchored" data-anchor-id="red-flags-3">Red flags</h3>
+<ul>
+<li>Very uneven coverage (peaks/holes) not explained by biology</li>
+<li>Large uncovered regions (could be contamination, poor mapping, reference issues)</li>
+<li>Samples with systematically lower depth than others (library prep / sequencing imbalance)</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="variant-calling-and-joint-genotyping" class="level2">
+<h2 class="anchored" data-anchor-id="variant-calling-and-joint-genotyping">6) Variant calling and joint genotyping</h2>
+<section id="note-different-dataset-types-need-different-expectations" class="level3">
+<h3 class="anchored" data-anchor-id="note-different-dataset-types-need-different-expectations">Note: different dataset types need different expectations</h3>
+<p>The steps after mapping (coverage summaries, variant calling, joint genotyping, filtering, annotation) are written mostly with <strong>WGS (whole-genome short-read resequencing)</strong> in mind.</p>
+<p>If your data are <em>not</em> WGS, the same tools can often be used, but you should adjust expectations and sometimes change the workflow:</p>
+<ul>
+<li><strong>ddRAD / GBS (reduced-representation) mapped to a reference</strong>
+<ul>
+<li>Coverage is concentrated at restriction-site loci; many genomic positions have <strong>zero coverage</strong> by design.</li>
+<li>Expect <strong>high missingness across loci</strong> (between individuals) and more variable depth between loci.</li>
+<li>Duplicate handling is trickier: some apparent duplicates can be genuine sampling of the same locus; PCR duplicates can also be common.</li>
+<li>Variant filtering often needs stronger missing-data and depth-based rules (e.g., per-site missingness thresholds; per-genotype depth thresholds) because “low depth” is more frequent.</li>
+<li>Many ddRAD/GBS projects use purpose-built toolchains (e.g., Stacks/ipyrad) for locus construction and SNP calling; reference-based calling can work, but interpretation of coverage and missingness differs from WGS.</li>
+</ul></li>
+<li><strong>Pool-seq (sequencing pooled individuals)</strong>
+<ul>
+<li>You typically estimate <strong>allele frequencies</strong> rather than individual genotypes; standard diploid genotype calling and joint genotyping are often not appropriate.</li>
+<li>ANGSD-style likelihood-based summaries or pileup/frequency-based pipelines are often a better fit than per-individual genotype calling.</li>
+</ul></li>
+<li><strong>Target capture / exome sequencing</strong>
+<ul>
+<li>Compute and watch <strong>on-target rate</strong> and coverage uniformity across targets; off-target reads can be substantial.</li>
+<li>Use intervals/targets for variant calling and QC (you care about depth on targets, not genome-wide breadth).</li>
+</ul></li>
+<li><strong>Low-coverage resequencing</strong>
+<ul>
+<li>Hard genotype calls become much less reliable when coverage per sample is low, because distinguishing <code>0/0</code>, <code>0/1</code>, and <code>1/1</code> is harder with only a few reads.</li>
+<li>Expect more uncertainty, more missing data, and noisier allele-balance patterns.</li>
+<li>In these cases, a genotype-likelihood framework is often better than forcing confident genotype calls too early.</li>
+<li>A common recommendation is an <strong>ANGSD-like pipeline</strong>, where you work with genotype likelihoods, site-frequency spectra, allele frequencies, PCA, and population-genetic summaries without overcommitting to hard genotype calls.</li>
+</ul></li>
+<li><strong>RNA-seq</strong>
+<ul>
+<li>Do not use BWA-MEM for spliced transcripts; use a splice-aware aligner (STAR/HISAT2). Variant calling from RNA-seq requires additional care (expression, splicing, allele-specific expression).</li>
+</ul></li>
+</ul>
+</section>
+<section id="concepts" class="level3">
+<h3 class="anchored" data-anchor-id="concepts">Concepts</h3>
+<ul>
+<li><strong>Variant calling</strong>: identify positions where sample differs from reference.</li>
+<li><strong>Genotyping</strong>: assign genotype (0/0, 0/1, 1/1) and confidence.</li>
+<li><strong>Joint genotyping</strong>: genotype multiple samples together for consistency.</li>
+</ul>
+<p>Joint genotyping helps:</p>
+<ul>
+<li>analyze all samples against the same set of candidate variant sites, instead of letting each sample decide on its own which sites exist</li>
+<li>make genotype calls more comparable across samples, which is important when you later compare populations or calculate allele frequencies</li>
+<li>reduce cases where one sample has a variant call but another sample is recorded as if nothing happened there, when the real issue is only lower confidence or lower coverage or borderline evidence</li>
+</ul>
+<p>For this practical, after you create and check the BAM files, this is the main next step.</p>
+</section>
+<section id="gatk-style-gvcf-workflow-common" class="level3">
+<h3 class="anchored" data-anchor-id="gatk-style-gvcf-workflow-common">GATK-style gVCF workflow (common)</h3>
+<p>Create the indexed reference FASTA:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="va">REF</span><span class="op">=</span>results/ref/ref.fa</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">samtools</span> faidx <span class="st">"</span><span class="va">$REF</span><span class="st">"</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="ex">gatk</span> CreateSequenceDictionary <span class="at">-R</span> <span class="st">"</span><span class="va">$REF</span><span class="st">"</span> <span class="at">-O</span> <span class="st">"</span><span class="va">${REF</span><span class="op">%</span>.fa<span class="va">}</span><span class="st">.dict"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Then call variants per sample with HaplotypeCaller in GVCF mode:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> results/vcf</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="va">REF</span><span class="op">=</span>results/ref/ref.fa</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> bam <span class="kw">in</span> results/bam/<span class="pp">*</span>.sorted.markdup.bam<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="va">sample</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> .sorted.markdup.bam<span class="va">)</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Calling variants for </span><span class="va">${sample}</span><span class="st">"</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="ex">gatk</span> HaplotypeCaller <span class="dt">\</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">-R</span> <span class="st">"</span><span class="va">$REF</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">-I</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">-O</span> <span class="st">"results/vcf/</span><span class="va">${sample}</span><span class="st">.g.vcf.gz"</span> <span class="dt">\</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">--all-site-pls</span> <span class="dt">\</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">-ERC</span> GVCF</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Then jointly genotype with <strong>GenomicsDB</strong>:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> results/gendb  results/tmp</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Import gVCFs into a GenomicsDB workspace</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="ex">gatk</span> GenomicsDBImport <span class="dt">\</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-R</span> <span class="st">"</span><span class="va">$REF</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="va">$(</span><span class="bu">printf</span> <span class="at">--</span> <span class="st">'-V %s '</span> results/vcf/<span class="pp">*</span>.g.vcf.gz<span class="va">)</span> <span class="dt">\</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-L</span> <span class="va">$(</span><span class="fu">grep</span> <span class="st">"^&gt;"</span> results/ref/ref.fa <span class="kw">|</span> <span class="fu">sed</span> <span class="st">'s/&gt;//'</span><span class="va">)</span> <span class="dt">\</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--genomicsdb-workspace-path</span> results/gendb/cohort_db <span class="dt">\</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">--tmp-dir</span> results/tmp <span class="dt">\</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">--reader-threads</span> 4</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Jointly genotype from the GenomicsDB workspace</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="ex">gatk</span> GenotypeGVCFs <span class="dt">\</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">-R</span> <span class="st">"</span><span class="va">$REF</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">-all-sites</span> <span class="dt">\</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">--standard-min-confidence-threshold-for-calling</span> 20 <span class="dt">\</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">-V</span> gendb://results/gendb/cohort_db <span class="dt">\</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">-O</span> results/vcf/cohort.raw.vcf.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Notes:</p>
+<ul>
+<li>For real datasets, you typically add intervals (e.g.&nbsp;<code>-L chr1</code> or an intervals list) and/or split by contig to make GenomicsDBImport faster and more memory-friendly.</li>
+<li>For very small cohorts, <code>CombineGVCFs</code> can also work, but GenomicsDB scales better.</li>
+<li>The log files from the per-sample and cohort steps are worth checking first if one sample fails or the cohort import stops early.</li>
+</ul>
+</section>
+<section id="red-flags-4" class="level3">
+<h3 class="anchored" data-anchor-id="red-flags-4">Red flags</h3>
+<ul>
+<li>Many variants with extreme strand bias metrics</li>
+<li>Huge number of variants in one sample only (sample contamination or mapping artifacts)</li>
+<li>Abnormally high heterozygosity across the genome (contamination, polyploidy, reference mismatch)</li>
+</ul>
+</section>
+<section id="note-indel-realignment-and-why-gatk-haplotypecaller-doesnt-need-it" class="level3">
+<h3 class="anchored" data-anchor-id="note-indel-realignment-and-why-gatk-haplotypecaller-doesnt-need-it">Note: indel realignment (and why GATK HaplotypeCaller doesn’t need it)</h3>
+<p>Older variant-calling workflows often included an explicit <strong>indel realignment</strong> step after mapping. The reason is that read alignments around true indels can contain mismatches that look like clusters of false SNPs (and they can distort allele counts).</p>
+<p>With <strong>GATK HaplotypeCaller</strong>, a separate indel realignment step is <strong>not necessary</strong>, because HaplotypeCaller performs <strong>local re-assembly/realignment</strong> of reads in “active regions” as part of calling (and the old <code>IndelRealigner</code> tool is deprecated/removed in GATK4). See the GATK docs describing HaplotypeCaller’s local assembly and the deprecation of IndelRealigner:</p>
+<ul>
+<li>https://gatk.broadinstitute.org/hc/en-us/articles/360037225632-HaplotypeCaller</li>
+<li>https://github.com/broadinstitute/gatk-docs/blob/master/blog-2012-to-2019/2016-06-21-Changing_workflows_around_calling_SNPs_and_indels.md?id=7847</li>
+</ul>
+<p>For <strong>Pool-seq</strong> (or any workflow where you rely heavily on <strong>read-count-based allele frequencies</strong> from alignments/pileups), indel-associated misalignments can be especially painful because they:</p>
+<ul>
+<li>Create <strong>false SNPs</strong> near indels.</li>
+<li>Bias <strong>allele frequency estimates</strong> by shifting reads between reference/alternate support.</li>
+</ul>
+<p>If you are not using an assembly-based caller (or if you’re doing Pool-seq allele-frequency analyses), it can be worth either (a) doing an indel-aware realignment step with an appropriate tool, or (b) using conservative filters such as masking SNPs within a window around called indels and applying strict mapping/base-quality thresholds.</p>
+<hr>
+</section>
+</section>
+<section id="variant-filtering-hard-filters" class="level2">
+<h2 class="anchored" data-anchor-id="variant-filtering-hard-filters">7) Variant filtering (hard filters)</h2>
+<section id="why-filtering-is-needed" class="level3">
+<h3 class="anchored" data-anchor-id="why-filtering-is-needed">Why filtering is needed</h3>
+<p>Raw VCFs include artifacts from:</p>
+<ul>
+<li>Mis-mapping in repeats</li>
+<li>Local alignment errors around indels</li>
+<li>Strand bias</li>
+<li>Low depth / low genotype quality</li>
+</ul>
+<p>Filtering aims to remove variants that look unreliable.</p>
+</section>
+<section id="hard-filtering-vs-model-based-filtering" class="level3">
+<h3 class="anchored" data-anchor-id="hard-filtering-vs-model-based-filtering">Hard filtering vs model-based filtering</h3>
+<ul>
+<li><strong>Hard filtering</strong>: apply thresholds (simple, transparent; good for small datasets)</li>
+<li><strong>VQSR</strong> (model-based): requires large training sets; often not feasible for non-model organisms or small cohorts</li>
+</ul>
+</section>
+<section id="what-to-pay-attention-to" class="level3">
+<h3 class="anchored" data-anchor-id="what-to-pay-attention-to">What to pay attention to</h3>
+<p>Per-variant and per-genotype fields:</p>
+<ul>
+<li><code>DP</code> (depth)</li>
+<li><code>GQ</code> (genotype quality)</li>
+<li><code>AD</code> (allele depths; supports allele balance checks)</li>
+<li><code>MQ</code> (mapping quality)</li>
+<li>Strand bias metrics (e.g., <code>FS</code>, <code>SOR</code>)</li>
+</ul>
+</section>
+<section id="strategies-for-setting-thresholds" class="level3">
+<h3 class="anchored" data-anchor-id="strategies-for-setting-thresholds">Strategies for setting thresholds</h3>
+<p>Exact thresholds depend on organism, coverage, and pipeline.</p>
+<p>Use <code>bcftools</code> for exploring distributions:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> results/plots</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> stats <span class="at">-s</span> <span class="at">-</span> results/vcf/cohort.raw.vcf.gz <span class="op">&gt;</span> results/vcf/cohort.stats.txt</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Explore depth distribution</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> query <span class="at">-f</span> <span class="st">'[%DP\n]'</span> results/vcf/cohort.raw.vcf.gz <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">"</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="st">import sys, numpy as np, matplotlib.pyplot as plt</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="st">x = np.array([float(l.strip()) for l in sys.stdin if l.strip() != '.'])</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="st">plt.hist(x, bins=100, density=True)</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="st">plt.xlabel('DP'); plt.ylabel('Density')</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="st">plt.savefig('results/plots/depth_distribution.pdf')"</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Explore genotype quality distribution</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> query <span class="at">-f</span> <span class="st">'[%GQ\n]'</span> results/vcf/cohort.raw.vcf.gz <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">"</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="st">import sys, numpy as np, matplotlib.pyplot as plt</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="st">x = np.array([float(l.strip()) for l in sys.stdin if l.strip() != '.'])</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="st">plt.hist(x, bins=100, density=True)</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="st">plt.xlabel('GQ'); plt.ylabel('Density')</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="st">plt.savefig('results/plots/genotype_quality_distribution.pdf')"</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Explore allele balance distribution for heterozygotes</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">"import allel; import matplotlib.pyplot as plt; import numpy as np</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="st">callset = allel.read_vcf('results/vcf/cohort.raw.vcf.gz', fields=['AD', 'DP','GT', 'numalt'])</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="st">gt = callset['calldata/GT']</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a><span class="st">ad = callset['calldata/AD']</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a><span class="st">numalt = callset['variants/numalt']</span></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a><span class="st"># biallelic sites only</span></span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a><span class="st">biallelic = numalt == 1</span></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a><span class="st">gt = gt[biallelic]</span></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a><span class="st">ad = ad[biallelic]</span></span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a><span class="st"># heterozygotes only</span></span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a><span class="st">het = (gt[:, :, 0] != gt[:, :, 1])</span></span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a><span class="st"># calculate allele balance (alt / (ref + alt) for heterozygotes)</span></span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a><span class="st">denom = ad.sum(axis=2).astype(float)</span></span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a><span class="st">mask = het &amp; (denom &gt; 0)</span></span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a><span class="st">ab = ad[:, :, 1].astype(float)[mask] / denom[mask]</span></span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a><span class="st">plt.hist(ab, bins=100)</span></span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a><span class="st">plt.xlabel('Allele Balance (heterozygotes)')</span></span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a><span class="st">plt.ylabel('Frequency')</span></span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a><span class="st">plt.title('AB distribution (biallelic het sites)')</span></span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a><span class="st">plt.savefig('results/plots/ab_distribution.pdf')"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A common strategy is:</p>
+<ol type="1">
+<li>Filter obvious low-quality variants (variant-level)</li>
+<li>Then apply genotype-level masks (e.g., set low-depth genotypes to missing)</li>
+</ol>
+<p><a href="https://gatk.broadinstitute.org/hc/en-us/articles/360035531112--How-to-Filter-variants-either-with-VQSR-or-by-hard-filtering">Basic hard filter recommended by GATK best practices:</a></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gatk</span> VariantFiltration <span class="dt">\</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">-V</span> results/vcf/cohort.raw.vcf.gz <span class="dt">\</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">-filter</span> <span class="st">"QD &lt; 2.0"</span> <span class="at">--filter-name</span> <span class="st">"QD2"</span> <span class="dt">\</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">-filter</span> <span class="st">"QUAL &lt; 30.0"</span> <span class="at">--filter-name</span> <span class="st">"QUAL30"</span> <span class="dt">\</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">-filter</span> <span class="st">"SOR &gt; 3.0"</span> <span class="at">--filter-name</span> <span class="st">"SOR3"</span> <span class="dt">\</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">-filter</span> <span class="st">"FS &gt; 60.0"</span> <span class="at">--filter-name</span> <span class="st">"FS60"</span> <span class="dt">\</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">-filter</span> <span class="st">"MQ &lt; 40.0"</span> <span class="at">--filter-name</span> <span class="st">"MQ40"</span> <span class="dt">\</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">-filter</span> <span class="st">"MQRankSum &lt; -12.5"</span> <span class="at">--filter-name</span> <span class="st">"MQRankSum-12.5"</span> <span class="dt">\</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">-filter</span> <span class="st">"ReadPosRankSum &lt; -8.0"</span> <span class="at">--filter-name</span> <span class="st">"ReadPosRankSum-8"</span> <span class="dt">\</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">-O</span> results/vcf/cohort.filtered.vcf.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Select only passing variants:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gatk</span> SelectVariants <span class="dt">\</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-V</span> results/vcf/cohort.filtered.vcf.gz <span class="dt">\</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--exclude-filtered</span> <span class="dt">\</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-O</span> results/vcf/cohort.filtered.pass.vcf.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Then set low-depth genotypes to missing:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> filter <span class="dt">\</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-e</span> <span class="st">'FMT/DP&lt;10 || FMT/DP&gt;100'</span> <span class="dt">\</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-S</span> . <span class="dt">\</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-Oz</span> <span class="at">-o</span> results/vcf/cohort.filtered.depth_masked.vcf.gz <span class="dt">\</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  results/vcf/cohort.filtered.pass.vcf.gz</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="ex">tabix</span> <span class="at">-p</span> vcf results/vcf/cohort.filtered.depth_masked.vcf.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Filter on missingness (e.g., remove sites with &gt;20% missing genotypes):</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> view <span class="dt">\</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> <span class="st">'F_MISSING&lt;0.2'</span> <span class="dt">\</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-Oz</span> <span class="at">-o</span> results/vcf/cohort.filtered.miss.vcf.gz <span class="dt">\</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  results/vcf/cohort.filtered.depth_masked.vcf.gz</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="ex">tabix</span> <span class="at">-p</span> vcf results/vcf/cohort.filtered.miss.vcf.gz</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> stats <span class="at">-s</span> <span class="at">-</span> results/vcf/cohort.filtered.miss.vcf.gz <span class="op">&gt;</span> results/vcf/cohort.filtered.miss.stats.txt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Select only biallelic SNPs + invariant sites (if needed):</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> view <span class="dt">\</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-m2</span> <span class="at">-M2</span> <span class="dt">\ </span>           <span class="co"># keep only biallelic sites</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">-v</span> snps,ref <span class="dt">\ </span>      <span class="co"># include SNPs and invariant (reference) sites</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="ex">-Oz</span> <span class="at">-o</span> results/vcf/cohort.biallelic.with_invariant.vcf.gz <span class="dt">\</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  results/vcf/cohort.filtered.miss.vcf.gz</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="ex">tabix</span> <span class="at">-p</span> vcf results/vcf/cohort.biallelic.with_invariant.vcf.gz</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> stats <span class="at">-s</span> <span class="at">-</span> results/vcf/cohort.biallelic.with_invariant.vcf.gz <span class="op">&gt;</span> results/vcf/cohort.biallelic.with_invariant.stats.txt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+</section>
+<section id="variant-annotation-and-extraction-of-4-fold-degenerate-sites" class="level2">
+<h2 class="anchored" data-anchor-id="variant-annotation-and-extraction-of-4-fold-degenerate-sites">8) Variant annotation and extraction of 4-fold degenerate sites</h2>
+<section id="conceptual-overview" class="level3">
+<h3 class="anchored" data-anchor-id="conceptual-overview">Conceptual overview</h3>
+<p>Variant annotation assigns functional consequences to each polymorphism relative to gene models. Tools such as snpEff classify variants into categories including:</p>
+<ul>
+<li>synonymous vs nonsynonymous</li>
+<li>stop gained / loss</li>
+<li>splice site disruption</li>
+<li>UTR, intronic, intergenic</li>
+</ul>
+<p>This step is typically essential when the objective is to partition variation by functional class and infer selection.</p>
+<p>A specific subset of annotated sites are <strong>4-fold degenerate positions</strong>, defined as codon positions where all possible nucleotide substitutions are synonymous. These sites are often used as a proxy for near-neutral evolution.</p>
+</section>
+<section id="strategy-in-this-workflow" class="level3">
+<h3 class="anchored" data-anchor-id="strategy-in-this-workflow">Strategy in this workflow</h3>
+<p>In this tutorial, a precomputed BED file of 4-fold degenerate sites in the reference genomeis already provided. Here we will directly extracts variants overlapping these known 4-fold sites.</p>
+</section>
+<section id="practical-steps" class="level3">
+<h3 class="anchored" data-anchor-id="practical-steps">Practical steps</h3>
+<ol type="1">
+<li>Start from a filtered cohort VCF</li>
+<li>Subset variants using the provided 4-fold BED</li>
+</ol>
+<div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="va">FOURFOLD_BED</span><span class="op">=</span>ref/4fold.bed</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> view <span class="dt">\</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-T</span> <span class="st">"</span><span class="va">$FOURFOLD_BED</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-Oz</span> <span class="at">-o</span> results/vcf/cohort.filtered.4fold.vcf.gz <span class="dt">\</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  results/vcf/cohort.filtered.vcf.gz</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="ex">tabix</span> <span class="at">-p</span> vcf results/vcf/cohort.filtered.4fold.vcf.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

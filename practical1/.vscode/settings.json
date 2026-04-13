@@ -1,0 +1,16 @@
+{
+  "workbench.startupEditor": "readme",
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "terminal.integrated.enableShellIntegration": true,
+  "terminal.integrated.scrollback": 100000,
+  "editor.minimap.enabled": false,
+  "editor.lineNumbers": "on",
+  "notebook.lineNumbers": "on",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": false
+  }
+}

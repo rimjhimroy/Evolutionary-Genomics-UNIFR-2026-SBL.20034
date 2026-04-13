@@ -1,0 +1,28 @@
+[workspace]
+name = "evo-practical1"
+version = "0.1.0"
+channels = [
+	"conda-forge",
+	"bioconda",
+	"https://repo.anaconda.com/pkgs/main",
+	"https://repo.anaconda.com/pkgs/r",
+]
+platforms = ["linux-64"]
+
+[dependencies]
+# Keep this environment minimal to reduce Docker image size.
+# (FastQC is installed via apt; MultiQC via pip; GATK/Picard are installed separately.)
+
+# Trimming
+fastp = "*"
+
+# Alignment / BAM / VCF
+bwa = "*"
+samtools = "*"
+bcftools = "*"
+tabix = "*"
+
+# Python scientific stack
+numpy = "*"
+matplotlib = "*"
+scikit-allel = "*"

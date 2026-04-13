@@ -1,0 +1,15 @@
+{
+  "workbench.startupEditor": "readme",
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.enableShellIntegration": true,
+  "terminal.integrated.commandsToSkipShell": [
+    "workbench.action.terminal.runSelectedText",
+    "workbench.action.terminal.runSelectedTextInActiveTerminal"
+  ],
+  "editor.minimap.enabled": false,
+  "workbench.editor.wrapTabs": true,
+  "editor.lineNumbers": "on",
+  "notebook.lineNumbers": "on",
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1500
+}
