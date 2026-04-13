@@ -21,6 +21,8 @@ bwa = "*"
 samtools = "*"
 bcftools = "*"
 tabix = "*"
+bamtools = "*"
+sambamba = "*"
 
 # Python scientific stack
 numpy = "*"
