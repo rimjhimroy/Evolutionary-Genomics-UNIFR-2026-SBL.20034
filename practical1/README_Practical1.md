@@ -499,13 +499,14 @@ gatk GenotypeGVCFs \
   --standard-min-confidence-threshold-for-calling 20 \
   -V gendb://results/gendb/cohort_db \
   -O results/vcf/cohort.raw.vcf.gz
+
 ```
 
 Notes:
 
 - For real datasets, you typically add intervals (e.g. `-L chr1` or an intervals list) and/or split by contig to make GenomicsDBImport faster and more memory-friendly.
 - For very small cohorts, `CombineGVCFs` can also work, but GenomicsDB scales better.
-- The log files from the per-sample and cohort steps are worth checking first if one sample fails or the cohort import stops early.
+
 
 ### Red flags
 
@@ -563,7 +564,7 @@ Per-variant and per-genotype fields:
 
 ### Strategies for setting thresholds
 
-Exact thresholds depend on organism, coverage, and pipeline.
+Exact thresholds depend on coverage, and pipeline.
 
 Use `bcftools` for exploring distributions:
 
