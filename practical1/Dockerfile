@@ -52,7 +52,7 @@ RUN mkdir -p /usr/share/man/man1 \
 
 # MultiQC: install into a dedicated venv (PEP 668 compliant)
 RUN python3 -m venv /opt/multiqc-venv \
-    && /opt/multiqc-venv/bin/pip install --no-cache-dir "multiqc==1.33" \
+    && /opt/multiqc-venv/bin/pip install --no-cache-dir "multiqc==1.33" "numpy" "matplotlib" "scikit-allel" \
     && ln -sf /opt/multiqc-venv/bin/multiqc /usr/local/bin/multiqc
 
 # 4. Optional: Add anything else you want to add as root
