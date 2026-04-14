@@ -283,7 +283,6 @@ for r1 in results/trimmed/*_R1.trim.fastq.gz; do
     | samtools sort -@ 4 -o "results/bam/${sample}.sorted.bam"
 
   samtools index "results/bam/${sample}.sorted.bam"
-  samtools flagstat "results/bam/${sample}.sorted.bam" > "results/bam/${sample}.flagstat.txt"
   samtools stats "results/bam/${sample}.sorted.bam" > "results/bam/${sample}.samtools.stats.txt"
 done
 ```
@@ -321,7 +320,7 @@ done
 
 ---
 
-## 5) Coverage report (samtools)
+## 5) Coverage report
 
 ### Why coverage matters
 
@@ -337,7 +336,7 @@ You usually care about:
 - **Breadth of coverage** (fraction of genome covered at ≥1× / ≥10×)
 - **Uniformity** (how even coverage is across the genome)
 
-### Quick depth summaries with samtools
+### Quick depth summaries
 
 For one sample:
 
@@ -651,6 +650,8 @@ gatk SelectVariants \
   -V results/vcf/cohort.filtered.vcf.gz \
   --exclude-filtered \
   -O results/vcf/cohort.filtered.pass.vcf.gz
+
+bcftools stats -s - results/vcf/cohort.filtered.pass.vcf.gz > results/vcf/cohort.filtered.pass.stats.txt
 ``` 
 
 Then set low-depth genotypes to missing:
@@ -662,6 +663,8 @@ bcftools filter \
   -Oz -o results/vcf/cohort.filtered.depth_masked.vcf.gz \
   results/vcf/cohort.filtered.pass.vcf.gz
 tabix -p vcf results/vcf/cohort.filtered.depth_masked.vcf.gz
+
+bcftools stats -s - results/vcf/cohort.filtered.depth_masked.vcf.gz > results/vcf/cohort.filtered.depth_masked.stats.txt
 ```
 
 
@@ -727,6 +730,8 @@ bcftools view \
   results/vcf/cohort.filtered.vcf.gz
 
 tabix -p vcf results/vcf/cohort.filtered.4fold.vcf.gz
+
+bcftools stats -s - results/vcf/cohort.filtered.4fold.vcf.gz > results/vcf/cohort.filtered.4fold.stats.txt
 ```
 
 ---
