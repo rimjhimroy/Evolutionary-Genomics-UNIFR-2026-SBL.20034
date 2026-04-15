@@ -347,29 +347,6 @@ You usually care about:
 
 ### Quick depth summaries
 
-For one sample:
-
-```bash
-# Per-base depth (filtered) using sambamba
-sambamba depth base -t 4 -c 0 
--F "mapping_quality > 0 and not (duplicate or failed_quality_control or unmapped or secondary_alignment)" 
--o sample.txt sample.sorted.markdup.bam
-
-# Mean genome-wide depth
-echo -e "mean_depth\t$(awk '{sum+=$3; n++} END{print (n?sum/n:0)}' sample.txt)" > sample.summary.txt
-
-# Breadth of coverage (>0x)
-echo -e "%_covered_gt0x\t$(awk '{c++; if($3>0) total+=1} END{print (total/c)*100}' sample.txt)" >> sample.summary.txt
-
-# Breadth of coverage (>10x)
-echo -e "%_covered_gt10x\t$(awk '{c++; if($3>10) total+=1} END{print (total/c)*100}' sample.txt)" >> sample.summary.txt
-
-# BAM alignment statistics
-bamtools stats -in sample.sorted.markdup.bam | grep -v "*" > sample_bamtools_stats.txt
-
-
-```
-
 For all samples:
 
 ```bash
