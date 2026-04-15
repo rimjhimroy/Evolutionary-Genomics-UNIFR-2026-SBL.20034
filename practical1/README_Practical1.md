@@ -374,6 +374,7 @@ for bam in results/bam/*.sorted.markdup.bam; do
 
   # BAM stats
   bamtools stats -in "$bam" | grep -v "*" > "results/bam/${sample}_bamtools_stats.txt"
+  samtools flagstat "$bam" > "results/bam/${sample}_flagstat.txt"
 
 
 done

@@ -443,9 +443,10 @@ dataset-tutorial1/ref/4fold.bed          # provided 4-fold sites (BED)</code></p
 <span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># BAM stats</span></span>
 <span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  <span class="ex">bamtools</span> stats <span class="at">-in</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-v</span> <span class="st">"*"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">_bamtools_stats.txt"</span></span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>  <span class="ex">samtools</span> flagstat <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">_flagstat.txt"</span></span>
 <span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="red-flags-3" class="level3">
 <h3 class="anchored" data-anchor-id="red-flags-3">Red flags</h3>
