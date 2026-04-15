@@ -105,11 +105,11 @@ Before running any analysis, it's good practice to open a FASTQ file and check i
 zcat dataset-tutorial1/reads/sample1_R1.fastq.gz | head
 ```
 
-Look for the four-line FASTQ structure:
-1. Sequence identifier (starts with `@`)
-2. Sequence (A/C/G/T/N)
-3. Separator line (starts with `+`)
-4. Quality scores (ASCII characters)
+Look for the four-line FASTQ structure:  
+1. Sequence identifier (starts with `@`)  
+2. Sequence (A/C/G/T/N)  
+3. Separator line (starts with `+`)  
+4. Quality scores (ASCII characters)  
 
 ---
 
@@ -221,6 +221,8 @@ for r1 in dataset-tutorial1/reads/*_R1.fastq.gz; do
     --html "results/fastp_reports/${sample}.fastp.html" \
     --json "results/fastp_reports/${sample}.fastp.json"
 done
+
+multiqc -o results/fastp_reports results/fastp_reports
 ```
 
 ### How to read fastp output
@@ -283,7 +285,6 @@ for r1 in results/trimmed/*_R1.trim.fastq.gz; do
     | samtools sort -@ 4 -o "results/bam/${sample}.sorted.bam"
 
   samtools index "results/bam/${sample}.sorted.bam"
-  samtools stats "results/bam/${sample}.sorted.bam" > "results/bam/${sample}.samtools.stats.txt"
 done
 ```
 
@@ -309,6 +310,15 @@ for bam in results/bam/*.sorted.bam; do
     M="results/bam/${sample}.dup_metrics.txt" \
     CREATE_INDEX=true
 done
+
+```
+
+Check the format of the bam files (or uncompressed sam files):
+
+```bash
+
+samtools view results/bam/sample1.sorted.markdup.bam | less
+
 ```
 
 ### Red flags
@@ -316,7 +326,6 @@ done
 - Low overall mapping rate
 - Very high fraction of reads with MAPQ=0 (multi-mapping)
 - High duplicate rate (PCR artifacts)
-- Strong strand bias / weird insert size distribution
 
 ---
 

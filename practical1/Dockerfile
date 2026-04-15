@@ -50,9 +50,10 @@ RUN mkdir -p /usr/share/man/man1 \
     && apt-get update && apt-get install -y /tmp/quarto.deb \
     && rm /tmp/quarto.deb
 
+
 # MultiQC: install into a dedicated venv (PEP 668 compliant)
 RUN python3 -m venv /opt/multiqc-venv \
-    && /opt/multiqc-venv/bin/pip install --no-cache-dir "multiqc==1.33" "numpy" "matplotlib" "scikit-allel" \
+    && /opt/multiqc-venv/bin/pip install --no-cache-dir "multiqc==1.33" \
     && ln -sf /opt/multiqc-venv/bin/multiqc /usr/local/bin/multiqc
 
 # 4. Optional: Add anything else you want to add as root
@@ -62,6 +63,8 @@ RUN sed -i 's/^# \(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen \
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
+
+COPY requirements.txt environment.yml /tmp/
 
 ## Pixi (pinned)
 ENV PIXI_VERSION=0.65.0
