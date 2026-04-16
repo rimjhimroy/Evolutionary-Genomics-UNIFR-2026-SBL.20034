@@ -587,31 +587,46 @@ plt.xlabel('GQ'); plt.ylabel('Density')
 plt.savefig('results/plots/genotype_quality_distribution.pdf')"
 
 # Explore allele balance distribution for heterozygotes
-python3 -c "import allel; import matplotlib.pyplot as plt; import numpy as np
+python3 -c "import allel
+import matplotlib.pyplot as plt
+import numpy as np
 
-callset = allel.read_vcf('results/vcf/cohort.raw.vcf.gz', fields=['AD', 'DP','GT', 'numalt'])
-
+callset = allel.read_vcf(
+    'results/vcf/cohort.raw.vcf.gz',
+    fields=['AD', 'DP', 'GT', 'numalt']
+)
 
 gt = callset['calldata/GT']
 ad = callset['calldata/AD']
-
 numalt = callset['variants/numalt']
 
-# biallelic sites only
-biallelic = numalt == 1
+# 1. Strict biallelic sites
+biallelic = (numalt == 1)
 
 gt = gt[biallelic]
 ad = ad[biallelic]
 
-# heterozygotes only
+# 2. Enforce AD has exactly 2 entries (ref, alt)
+biallelic_ad = (ad.shape[2] == 2)
+ad = ad[:, :, :2]  
+
+# 3. Heterozygotes
 het = (gt[:, :, 0] != gt[:, :, 1])
 
-# calculate allele balance (alt / (ref + alt) for heterozygotes)
-denom = ad.sum(axis=2).astype(float)
+# 4. Extract ref and alt depths explicitly
+ref = ad[:, :, 0].astype(float)
+alt = ad[:, :, 1].astype(float)
 
+denom = ref + alt
+
+# 5. Apply mask
 mask = het & (denom > 0)
 
-ab = ad[:, :, 1].astype(float)[mask] / denom[mask]
+# 6. Correct allele balance
+ab = alt[mask] / denom[mask]
+
+# 7. Optional: depth filter
+# mask = mask & (denom >= 10)
 
 plt.hist(ab, bins=100)
 plt.xlabel('Allele Balance (heterozygotes)')
