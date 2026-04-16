@@ -373,11 +373,15 @@ for bam in results/bam/*.sorted.markdup.bam; do
     >> "results/bam/${sample}.depth.summary.txt"
 
   # BAM stats
+  bamtools coverage -in "$bam" > "results/bam/${sample}_coverage.txt"
   bamtools stats -in "$bam" | grep -v "*" > "results/bam/${sample}_bamtools_stats.txt"
   samtools flagstat "$bam" > "results/bam/${sample}_flagstat.txt"
-
+  samtools stat "$bam" > "results/bam/${sample}_samtools_stats.txt"
+  mosdepth -n --fast-mode --by 500 "results/bam/${sample}" "$bam" 
 
 done
+
+multiqc -o results/bam/coverage_reports results/bam/
 ```
 
 ### Red flags
@@ -385,6 +389,7 @@ done
 - Very uneven coverage (peaks/holes) not explained by biology
 - Large uncovered regions (could be contamination, poor mapping, reference issues)
 - Samples with systematically lower depth than others (library prep / sequencing imbalance)
+- Samples with strand bias in coverage (mapping artifacts)
 
 ---
 
@@ -487,6 +492,9 @@ gatk GenotypeGVCFs \
   -V gendb://results/gendb/cohort_db \
   -O results/vcf/cohort.raw.vcf.gz
 
+bcftools stats -s - results/vcf/cohort.raw.vcf.gz > results/vcf/cohort.stats.txt
+
+multiqc -o results/vcf/variant_calling_reports results/vcf/cohort.stats.txt
 ```
 
 Notes:
@@ -557,7 +565,8 @@ Use `bcftools` for exploring distributions:
 
 ```bash
 mkdir -p results/plots
-bcftools stats -s - results/vcf/cohort.raw.vcf.gz > results/vcf/cohort.stats.txt
+
+pip install -r /tmp/requirements.txt
 
 # Explore depth distribution
 bcftools query -f '[%DP\n]' results/vcf/cohort.raw.vcf.gz | \

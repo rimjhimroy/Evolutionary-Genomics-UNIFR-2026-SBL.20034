@@ -23,8 +23,9 @@ bcftools = "*"
 tabix = "*"
 bamtools = "*"
 sambamba = "*"
+mosdepth = "*"
 
 # Python scientific stack
-numpy = "*"
-matplotlib = "*"
-scikit-allel = "*"
+numpy = "==1.26.4"
+matplotlib = "==3.8.4"
+scikit-allel = "==1.3.7"

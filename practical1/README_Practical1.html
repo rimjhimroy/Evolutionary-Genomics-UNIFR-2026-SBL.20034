@@ -442,11 +442,15 @@ dataset-tutorial1/ref/4fold.bed          # provided 4-fold sites (BED)</code></p
 <span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">&gt;&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">.depth.summary.txt"</span></span>
 <span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># BAM stats</span></span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  <span class="ex">bamtools</span> stats <span class="at">-in</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-v</span> <span class="st">"*"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">_bamtools_stats.txt"</span></span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>  <span class="ex">samtools</span> flagstat <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">_flagstat.txt"</span></span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  <span class="ex">bamtools</span> coverage <span class="at">-in</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">_coverage.txt"</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>  <span class="ex">bamtools</span> stats <span class="at">-in</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-v</span> <span class="st">"*"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">_bamtools_stats.txt"</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>  <span class="ex">samtools</span> flagstat <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">_flagstat.txt"</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>  <span class="ex">samtools</span> stat <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> <span class="op">&gt;</span> <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">_samtools_stats.txt"</span></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>  <span class="ex">mosdepth</span> <span class="at">-n</span> <span class="at">--fast-mode</span> <span class="at">--by</span> 500 <span class="st">"results/bam/</span><span class="va">${sample}</span><span class="st">"</span> <span class="st">"</span><span class="va">$bam</span><span class="st">"</span> </span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a><span class="ex">multiqc</span> <span class="at">-o</span> results/bam/coverage_reports results/bam/</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="red-flags-3" class="level3">
 <h3 class="anchored" data-anchor-id="red-flags-3">Red flags</h3>
@@ -454,6 +458,7 @@ dataset-tutorial1/ref/4fold.bed          # provided 4-fold sites (BED)</code></p
 <li>Very uneven coverage (peaks/holes) not explained by biology</li>
 <li>Large uncovered regions (could be contamination, poor mapping, reference issues)</li>
 <li>Samples with systematically lower depth than others (library prep / sequencing imbalance)</li>
+<li>Samples with strand bias in coverage (mapping artifacts)</li>
 </ul>
 <hr>
 </section>
@@ -552,7 +557,11 @@ dataset-tutorial1/ref/4fold.bed          # provided 4-fold sites (BED)</code></p
 <span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">-all-sites</span> <span class="dt">\</span></span>
 <span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">--standard-min-confidence-threshold-for-calling</span> 20 <span class="dt">\</span></span>
 <span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">-V</span> gendb://results/gendb/cohort_db <span class="dt">\</span></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">-O</span> results/vcf/cohort.raw.vcf.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">-O</span> results/vcf/cohort.raw.vcf.gz</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> stats <span class="at">-s</span> <span class="at">-</span> results/vcf/cohort.raw.vcf.gz <span class="op">&gt;</span> results/vcf/cohort.stats.txt</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="ex">multiqc</span> <span class="at">-o</span> results/vcf/variant_calling_reports results/vcf/cohort.stats.txt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Notes:</p>
 <ul>
 <li>For real datasets, you typically add intervals (e.g.&nbsp;<code>-L chr1</code> or an intervals list) and/or split by contig to make GenomicsDBImport faster and more memory-friendly.</li>
@@ -620,58 +629,59 @@ dataset-tutorial1/ref/4fold.bed          # provided 4-fold sites (BED)</code></p
 <p>Exact thresholds depend on coverage, and pipeline.</p>
 <p>Use <code>bcftools</code> for exploring distributions:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> results/plots</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> stats <span class="at">-s</span> <span class="at">-</span> results/vcf/cohort.raw.vcf.gz <span class="op">&gt;</span> results/vcf/cohort.stats.txt</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Explore depth distribution</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> query <span class="at">-f</span> <span class="st">'[%DP\n]'</span> results/vcf/cohort.raw.vcf.gz <span class="kw">|</span> <span class="dt">\</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">"</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="st">import sys, numpy as np, matplotlib.pyplot as plt</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="st">x = np.array([float(l.strip()) for l in sys.stdin if l.strip() != '.'])</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="st">plt.hist(x, bins=100, density=True)</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="st">plt.xlabel('DP'); plt.ylabel('Density')</span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="st">plt.savefig('results/plots/depth_distribution.pdf')"</span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Explore genotype quality distribution</span></span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> query <span class="at">-f</span> <span class="st">'[%GQ\n]'</span> results/vcf/cohort.raw.vcf.gz <span class="kw">|</span> <span class="dt">\</span></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">"</span></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="st">import sys, numpy as np, matplotlib.pyplot as plt</span></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="st">x = np.array([float(l.strip()) for l in sys.stdin if l.strip() != '.'])</span></span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="st">plt.hist(x, bins=100, density=True)</span></span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="st">plt.xlabel('GQ'); plt.ylabel('Density')</span></span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="st">plt.savefig('results/plots/genotype_quality_distribution.pdf')"</span></span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Explore allele balance distribution for heterozygotes</span></span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">"import allel; import matplotlib.pyplot as plt; import numpy as np</span></span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="st">callset = allel.read_vcf('results/vcf/cohort.raw.vcf.gz', fields=['AD', 'DP','GT', 'numalt'])</span></span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-r</span> /tmp/requirements.txt</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Explore depth distribution</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> query <span class="at">-f</span> <span class="st">'[%DP\n]'</span> results/vcf/cohort.raw.vcf.gz <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">"</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="st">import sys, numpy as np, matplotlib.pyplot as plt</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="st">x = np.array([float(l.strip()) for l in sys.stdin if l.strip() != '.'])</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="st">plt.hist(x, bins=100, density=True)</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="st">plt.xlabel('DP'); plt.ylabel('Density')</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="st">plt.savefig('results/plots/depth_distribution.pdf')"</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Explore genotype quality distribution</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> query <span class="at">-f</span> <span class="st">'[%GQ\n]'</span> results/vcf/cohort.raw.vcf.gz <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">"</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="st">import sys, numpy as np, matplotlib.pyplot as plt</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="st">x = np.array([float(l.strip()) for l in sys.stdin if l.strip() != '.'])</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="st">plt.hist(x, bins=100, density=True)</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="st">plt.xlabel('GQ'); plt.ylabel('Density')</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="st">plt.savefig('results/plots/genotype_quality_distribution.pdf')"</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Explore allele balance distribution for heterozygotes</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">"import allel; import matplotlib.pyplot as plt; import numpy as np</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="st">callset = allel.read_vcf('results/vcf/cohort.raw.vcf.gz', fields=['AD', 'DP','GT', 'numalt'])</span></span>
 <span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="st">gt = callset['calldata/GT']</span></span>
-<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a><span class="st">ad = callset['calldata/AD']</span></span>
-<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a><span class="st">numalt = callset['variants/numalt']</span></span>
-<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a><span class="st"># biallelic sites only</span></span>
-<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a><span class="st">biallelic = numalt == 1</span></span>
-<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a><span class="st">gt = gt[biallelic]</span></span>
-<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a><span class="st">ad = ad[biallelic]</span></span>
-<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a><span class="st"># heterozygotes only</span></span>
-<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a><span class="st">het = (gt[:, :, 0] != gt[:, :, 1])</span></span>
-<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a><span class="st"># calculate allele balance (alt / (ref + alt) for heterozygotes)</span></span>
-<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a><span class="st">denom = ad.sum(axis=2).astype(float)</span></span>
-<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a><span class="st">mask = het &amp; (denom &gt; 0)</span></span>
-<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a><span class="st">ab = ad[:, :, 1].astype(float)[mask] / denom[mask]</span></span>
-<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a><span class="st">plt.hist(ab, bins=100)</span></span>
-<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a><span class="st">plt.xlabel('Allele Balance (heterozygotes)')</span></span>
-<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a><span class="st">plt.ylabel('Frequency')</span></span>
-<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a><span class="st">plt.title('AB distribution (biallelic het sites)')</span></span>
-<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a><span class="st">plt.savefig('results/plots/ab_distribution.pdf')"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a><span class="st">gt = callset['calldata/GT']</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a><span class="st">ad = callset['calldata/AD']</span></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a><span class="st">numalt = callset['variants/numalt']</span></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a><span class="st"># biallelic sites only</span></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a><span class="st">biallelic = numalt == 1</span></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a><span class="st">gt = gt[biallelic]</span></span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a><span class="st">ad = ad[biallelic]</span></span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a><span class="st"># heterozygotes only</span></span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a><span class="st">het = (gt[:, :, 0] != gt[:, :, 1])</span></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a><span class="st"># calculate allele balance (alt / (ref + alt) for heterozygotes)</span></span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a><span class="st">denom = ad.sum(axis=2).astype(float)</span></span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a><span class="st">mask = het &amp; (denom &gt; 0)</span></span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a><span class="st">ab = ad[:, :, 1].astype(float)[mask] / denom[mask]</span></span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a><span class="st">plt.hist(ab, bins=100)</span></span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a><span class="st">plt.xlabel('Allele Balance (heterozygotes)')</span></span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a><span class="st">plt.ylabel('Frequency')</span></span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a><span class="st">plt.title('AB distribution (biallelic het sites)')</span></span>
+<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a><span class="st">plt.savefig('results/plots/ab_distribution.pdf')"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A common strategy is:</p>
 <ol type="1">
 <li>Filter obvious low-quality variants (variant-level)</li>

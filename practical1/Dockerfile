@@ -93,6 +93,7 @@ RUN mkdir -p /opt/gatk /opt/picard \
 RUN mkdir -p /opt/practical1 /work \
     && chown -R renku:renku /opt/practical1 /work
 
+
 # 5. Switch back to the original user
 USER renku
 
