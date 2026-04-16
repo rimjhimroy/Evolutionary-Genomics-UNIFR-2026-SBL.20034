@@ -739,14 +739,13 @@ dataset-tutorial1/ref/4fold.bed          # provided 4-fold sites (BED)</code></p
 <span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> stats <span class="at">-s</span> <span class="at">-</span> results/vcf/cohort.filtered.miss.vcf.gz <span class="op">&gt;</span> results/vcf/cohort.filtered.miss.stats.txt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Select only biallelic SNPs + invariant sites (if needed):</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> view <span class="dt">\</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-m2</span> <span class="at">-M2</span> <span class="dt">\ </span>           <span class="co"># keep only biallelic sites</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">-v</span> snps,ref <span class="dt">\ </span>      <span class="co"># include SNPs and invariant (reference) sites</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="ex">-Oz</span> <span class="at">-o</span> results/vcf/cohort.biallelic.with_invariant.vcf.gz <span class="dt">\</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  results/vcf/cohort.filtered.miss.vcf.gz</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="ex">tabix</span> <span class="at">-p</span> vcf results/vcf/cohort.biallelic.with_invariant.vcf.gz</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> stats <span class="at">-s</span> <span class="at">-</span> results/vcf/cohort.biallelic.with_invariant.vcf.gz <span class="op">&gt;</span> results/vcf/cohort.biallelic.with_invariant.stats.txt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> <span class="er">(</span><span class="va">N_ALT</span><span class="op">=</span>0 <span class="kw">||</span> <span class="kw">(</span><span class="va">N_ALT</span><span class="op">=</span>1 <span class="kw">&amp;&amp;</span> <span class="va">TYPE</span><span class="op">=</span><span class="st">'snp'</span><span class="kw">))</span> <span class="dt">\</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">-Oz</span> <span class="at">-o</span> results/vcf/cohort.biallelic.with_invariant.vcf.gz <span class="dt">\</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  results/vcf/cohort.filtered.miss.vcf.gz</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="ex">tabix</span> <span class="at">-p</span> vcf results/vcf/cohort.biallelic.with_invariant.vcf.gz</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="ex">bcftools</span> stats <span class="at">-s</span> <span class="at">-</span> results/vcf/cohort.biallelic.with_invariant.vcf.gz <span class="op">&gt;</span> results/vcf/cohort.biallelic.with_invariant.stats.txt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <hr>
 </section>
 </section>
