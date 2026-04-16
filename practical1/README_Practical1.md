@@ -738,11 +738,16 @@ FOURFOLD_BED=ref/4fold.bed
 bcftools view \
   -T "$FOURFOLD_BED" \
   -Oz -o results/vcf/cohort.filtered.4fold.vcf.gz \
-  results/vcf/cohort.filtered.vcf.gz
+  results/vcf/cohort.biallelic.with_invariant.vcf.gz
 
 tabix -p vcf results/vcf/cohort.filtered.4fold.vcf.gz
 
 bcftools stats -s - results/vcf/cohort.filtered.4fold.vcf.gz > results/vcf/cohort.filtered.4fold.stats.txt
+```
+
+Get accumulated stats on the filtered vcfs
+```bash
+multiqc -o results/vcf/filtered_variant_reports results/vcf/
 ```
 
 ---
