@@ -696,7 +696,7 @@ Select only biallelic SNPs + invariant sites (if needed):
 
 ```bash
 bcftools view \
-  -i (N_ALT=0 || (N_ALT=1 && TYPE='snp')) \
+  -i '(N_ALT=0 || (N_ALT=1 && TYPE="snp"))' \
   -Oz -o results/vcf/cohort.biallelic.with_invariant.vcf.gz \
   results/vcf/cohort.filtered.miss.vcf.gz
 
