@@ -625,8 +625,9 @@ mask = het & (denom > 0)
 # 6. Correct allele balance
 ab = alt[mask] / denom[mask]
 
-# 7. Optional: depth filter
-# mask = mask & (denom >= 10)
+# 7. Depth filter
+mask = mask & (denom >= 10)
+ab = alt[mask] / denom[mask]
 
 plt.hist(ab, bins=100)
 plt.xlabel('Allele Balance (heterozygotes)')
