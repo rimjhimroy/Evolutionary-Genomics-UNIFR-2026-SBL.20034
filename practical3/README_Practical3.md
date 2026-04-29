@@ -36,9 +36,12 @@ The scaffold scan targets the neighbouring populations A2G (low elevation) and A
 
 The practical is split into three main folders.
 
-- `scripts/`: the three tutorial scripts you open in RStudio
+- `Evolutionary-Genomics-UNIFR-2026-SBL.20034/practical3/scripts/`: the three tutorial scripts you open in RStudio
 - `dataset-practical3/`: the input files organised into numbered datasets
-- `outputs/`: the figures and tables written by the scripts
+
+Create an `outputs/` folder to store the results of your analyses.
+```mkdir -p outputs
+```	
 
 The numbered datasets are:
 
