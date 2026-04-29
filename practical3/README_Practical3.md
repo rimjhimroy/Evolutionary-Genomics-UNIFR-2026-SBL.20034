@@ -13,9 +13,8 @@ Two types of genomic datasets are provided.
 
 These datasets are used to investigate population structure, genetic differentiation, and environmental associations using a range of population genomics tools.
 
-![Populations of Biscutella laevigata around the Alps](figures/practical3-overview-figure.png)
+![Figure1](figures/practical3-overview-figure.png)
 
-*Figure 1. Population map of Biscutella laevigata around the Alps.*
 
 You will analyse genomic variation across the six Alpine populations, compare the reduced-representation SNP dataset with the whole-genome SNP dataset, and then zoom in on one scaffold to connect broad population structure with local genomic differentiation.
 
@@ -31,7 +30,7 @@ Two SNP datasets are provided.
 - ddRAD dataset: 64 individuals and 1,127 LD-pruned SNPs
 - WGS dataset: 48 individuals and 11,475 LD-pruned SNPs
 
-The scaffold scan focuses on the neighbouring populations `A2G` and `A2S` to ask whether local genomic differentiation mirrors the broader structure seen across all six populations.
+The scaffold scan targets the neighbouring populations A2G (low elevation) and A2S (high elevation) to evaluate whether fine-scale genomic differentiation between adjacent populations reflects elevation-associated selection signals.  
 
 ## Folder layout
 
@@ -184,7 +183,7 @@ cat > extraparams <<'EOF'
 EOF
 ```
 
-These parameters configure STRUCTURE to perform **unbiased population clustering with standard statistical outputs**. Setting `NOADMIX 0` activates the admixture model, which allows each individual to draw a proportion of their ancestry from multiple clusters. `LINKAGE 0` tells STRUCTURE to treat all loci as statistically independent, which is the correct assumption here because our input SNPs have already been LD-pruned. `USEPOPINFO 0` and `LOCISPOP 0` tell STRUCTURE to discover population structure *de novo* without being guided by metadata—the algorithm finds clusters purely from genetic similarity. `INFERALPHA 1` allows STRUCTURE to learn the Dirichlet parameter α from the data itself, while `FREQSCORR 1` models realistic genetic differentiation between clusters by allowing allele frequencies to vary systematically across populations. `COMPUTEPROB 1` calculates the likelihood P(data|K) required for the Evanno ΔK method to select optimal K, `PRINTNET 1` outputs pairwise genetic distances between clusters, and `PRINTQHAT 1` outputs ancestry proportions for each individual. Finally, `UPDATEFREQ 5000` specifies how often allele frequencies are updated during the MCMC chain (every 5000 steps), and `RANDOMIZE 0` ensures parameters are updated in deterministic order for reproducible results across runs, promoting convergence stability.  
+These parameters configure STRUCTURE to perform **unbiased population clustering with standard statistical outputs**. Setting `NOADMIX 0` activates the admixture model, which allows each individual to draw a proportion of their ancestry from multiple clusters. `LINKAGE 0` tells STRUCTURE to treat all loci as statistically independent, which is the correct assumption here because our input SNPs have already been LD-pruned. `USEPOPINFO 0` and `LOCISPOP 0` tell STRUCTURE to discover population structure *de novo* without being guided by metadata; the algorithm finds clusters purely from genetic similarity. `INFERALPHA 1` allows STRUCTURE to learn the Dirichlet parameter alpha from the data itself, while `FREQSCORR 1` models realistic genetic differentiation between clusters by allowing allele frequencies to vary systematically across populations. `COMPUTEPROB 1` calculates the likelihood P(data|K) required for the Evanno Delta K method to select optimal K, `PRINTNET 1` outputs pairwise genetic distances between clusters, and `PRINTQHAT 1` outputs ancestry proportions for each individual. Finally, `UPDATEFREQ 5000` specifies how often allele frequencies are updated during the MCMC chain (every 5000 steps), and `RANDOMIZE 0` ensures parameters are updated in deterministic order for reproducible results across runs, promoting convergence stability.  
 
 Make a folder for the test outputs:
 
