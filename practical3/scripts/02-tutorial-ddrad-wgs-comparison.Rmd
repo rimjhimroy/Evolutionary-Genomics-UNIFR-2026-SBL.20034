@@ -26,6 +26,15 @@ library(vcfR)
 library(vegan)
 ```
 
+## Set the practical root directory
+
+Move to the scripts directory before reading inputs or writing outputs.
+
+```{r working-directory}
+setwd("/home/rstudio/work/Evolutionary-Genomics-UNIFR-2026-SBL.20034/practical3/scripts")
+getwd()
+```
+
 ## Set plot theme and paths
 
 Define the shared plotting style, the output folder, and the population order used throughout the analysis.
@@ -40,7 +49,7 @@ theme_set(
                 )
 )
 
-output_dir <- "outputs/02-ddrad-wgs-population-comparison"
+output_dir <- "../outputs/02-ddrad-wgs-population-comparison"
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 population_order <- c("A2G", "A2S", "V2B", "B2MV", "P2", "K2S2")
@@ -80,26 +89,26 @@ Load the elevation table, the geographic distance matrix, and the ddRAD and WGS 
 
 ```{r read-inputs}
 elevation_table <- read.table(
-        "dataset-practical3/02-ddrad-wgs-population-comparison/elevation.txt",
+        "../dataset-practical3/02-ddrad-wgs-population-comparison/elevation.txt",
         header = FALSE,
         stringsAsFactors = FALSE
 )
 names(elevation_table) <- c("pop", "elevation_m")
 
 geo_table <- read.table(
-        "dataset-practical3/02-ddrad-wgs-population-comparison/geo_dist.txt",
+        "../dataset-practical3/02-ddrad-wgs-population-comparison/geo_dist.txt",
         header = TRUE,
         check.names = FALSE
 )
 geo_matrix <- as.matrix(geo_table)
 
 ddrad_vcf <- read.vcfR(
-        "dataset-practical3/02-ddrad-wgs-population-comparison/ddRAD_filtered_pruned.vcf.gz",
+        "../dataset-practical3/02-ddrad-wgs-population-comparison/ddRAD_filtered_pruned.vcf.gz",
         verbose = FALSE
 )
 
 wgs_vcf <- read.vcfR(
-        "dataset-practical3/02-ddrad-wgs-population-comparison/diploids_bisnps_filt1rem_minDP4nc_maxDP1009rm_filtMAC4MAF01_MD02_pruned.vcf.gz",
+        "../dataset-practical3/02-ddrad-wgs-population-comparison/diploids_bisnps_filt1rem_minDP4nc_maxDP1009rm_filtMAC4MAF01_MD02_pruned.vcf.gz",
         verbose = FALSE
 )
 ```

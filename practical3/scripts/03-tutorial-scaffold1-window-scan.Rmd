@@ -24,6 +24,15 @@ library(tidyr)
 library(vcfR)
 ```
 
+## Set the practical root directory
+
+Move to the scripts directory before reading inputs or writing outputs.
+
+```{r working-directory}
+setwd("/home/rstudio/work/Evolutionary-Genomics-UNIFR-2026-SBL.20034/practical3/scripts")
+getwd()
+```
+
 ## Set plot theme and window size
 
 Define the shared plotting style, the output folder, and the sliding-window size used in this scaffold scan.
@@ -38,7 +47,7 @@ theme_set(
                 )
 )
 
-output_dir <- "outputs/03-scaffold1-window-scan"
+output_dir <- "../outputs/03-scaffold1-window-scan"
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 window_width <- 10000
@@ -51,7 +60,7 @@ Load the WGS VCF, identify the two focal populations, and create the PopGenome w
 
 ```{r wgs-inputs}
 wgs_vcf <- read.vcfR(
-        "dataset-practical3/03-scaffold1-window-scan/wgs_vcf/scaffold1/A2_wgs_scaffold1.vcf",
+        "../dataset-practical3/03-scaffold1-window-scan/wgs_vcf/scaffold1/A2_wgs_scaffold1.vcf",
         verbose = FALSE
 )
 wgs_names <- vcfR2genlight(wgs_vcf)$ind.names
@@ -60,7 +69,7 @@ wgs_populations <- list(
         A2S = grep("A2S", wgs_names, value = TRUE, fixed = TRUE)
 )
 
-wgs_data <- readData("dataset-practical3/03-scaffold1-window-scan/wgs_vcf/scaffold1", format = "VCF", include.unknown = TRUE)
+wgs_data <- readData("../dataset-practical3/03-scaffold1-window-scan/wgs_vcf/scaffold1", format = "VCF", include.unknown = TRUE)
 wgs_windows <- sliding.window.transform(wgs_data, width = window_width, jump = window_jump, type = 2)
 wgs_windows <- set.populations(wgs_windows, wgs_populations, diploid = TRUE)
 ```
@@ -272,7 +281,7 @@ Load the ddRAD VCF, identify the two focal populations, and create the PopGenome
 
 ```{r ddrad-inputs}
 ddrad_vcf <- read.vcfR(
-        "dataset-practical3/03-scaffold1-window-scan/ddRAD_vcf/scaffold_1/A2_ddRAD_scaffold_1.vcf",
+        "../dataset-practical3/03-scaffold1-window-scan/ddRAD_vcf/scaffold_1/A2_ddRAD_scaffold_1.vcf",
         verbose = FALSE
 )
 ddrad_names <- vcfR2genlight(ddrad_vcf)$ind.names
@@ -281,7 +290,7 @@ ddrad_populations <- list(
         A2S = grep("A2S", ddrad_names, value = TRUE, fixed = TRUE)
 )
 
-ddrad_data <- readData("dataset-practical3/03-scaffold1-window-scan/ddRAD_vcf/scaffold_1", format = "VCF", include.unknown = TRUE)
+ddrad_data <- readData("../dataset-practical3/03-scaffold1-window-scan/ddRAD_vcf/scaffold_1", format = "VCF", include.unknown = TRUE)
 ddrad_windows <- sliding.window.transform(ddrad_data, width = window_width, jump = window_jump, type = 2)
 ddrad_windows <- set.populations(ddrad_windows, ddrad_populations, diploid = TRUE)
 ```

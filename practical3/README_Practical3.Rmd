@@ -40,7 +40,7 @@ The practical is split into three main folders.
 - `dataset-practical3/`: the input files organised into numbered datasets
 
 Create an `outputs/` folder to store the results of your analyses.
-```r
+```{r, eval=FALSE}
 system("mkdir -p work/outputs")
 ```	
 
@@ -56,7 +56,7 @@ The numbered datasets are:
 
 Check that you are in the practical root with the following commands in the RStudio console:
 
-```r
+```{r, eval=FALSE}
 getwd()
 setwd("work")
 list.files()
@@ -95,14 +95,14 @@ The dataset folders are read-only on Renku. Read the input file from `dataset-tu
 
 Check that you are in the practical root:
 
-```r
+```{r, eval=FALSE}
 getwd()
 list.files()
 ```
 
 Inspect the STRUCTURE input folder:
 
-```r
+```{r, eval=FALSE}
 input_dir <- "dataset-tutorial3/01-structure-ddrad/01-structure-input"
 setwd(input_dir)
 getwd()
@@ -111,7 +111,7 @@ list.files()
 
 Now create a writable folder for your test run and move there:
 
-```r
+```{r, eval=FALSE}
 setwd("/home/rstudio/work")
 dir.create("outputs/01-structure-ddrad/small_structure_example", recursive = TRUE, showWarnings = FALSE)
 setwd("outputs/01-structure-ddrad/small_structure_example")
@@ -120,7 +120,7 @@ getwd()
 
 Copy the STRUCTURE input file into this writable folder:
 
-```r
+```{r, eval=FALSE}
 file.copy(
 	from = "/home/rstudio/work/dataset-tutorial3/01-structure-ddrad/01-structure-input/diploids_filt1rm_biSNPs_minDP15maxDP130nc_MAF005rm_MD02_pruned02_structure",
 	to = ".",
@@ -169,7 +169,7 @@ What is not included here:
 
 Create a short `mainparams` file for a small run:
 
-```r
+```{r, eval=FALSE}
 writeLines(
 	c(
 		"#define INFILE diploids_filt1rm_biSNPs_minDP15maxDP130nc_MAF005rm_MD02_pruned02_structure",
@@ -194,7 +194,7 @@ These are the core mainparams that define the scale and format of a STRUCTURE ru
 
 Create a short `extraparams` file:
 
-```r
+```{r, eval=FALSE}
 writeLines(
 	c(
 		"#define NOADMIX 0           # Allow admixture",
@@ -220,13 +220,13 @@ These parameters configure STRUCTURE to perform **unbiased population clustering
 
 Make a folder for the test outputs:
 
-```r
+```{r, eval=FALSE}
 dir.create("small_structure_runs", showWarnings = FALSE)
 ```
 
 Run a short example with a few values of `K` and a few replicates:
 
-```r
+```{r, eval=FALSE}
 jobs <- expand.grid(K = 1:4, REP = 1:3)
 
 parallel::mclapply(
@@ -252,7 +252,7 @@ What you are doing here:
 
 Inspect the output files:
 
-```r
+```{r, eval=FALSE}
 system("ls small_structure_runs")
 ```
 
@@ -266,7 +266,7 @@ The small run is only there so you understand what a STRUCTURE command looks lik
 
 Return to the practical root before continuing with the precomputed run:
 
-```r
+```{r, eval=FALSE}
 setwd("/home/rstudio/work")
 getwd()
 ```
@@ -282,7 +282,7 @@ The real analysis runs are already provided in:
 
 Go to that folder in the RStudio console:
 
-```r
+```{r, eval=FALSE}
 setwd("dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs")
 list.files()
 setwd("ddRAD_results")
@@ -293,7 +293,7 @@ list.files()
 
 Still in the RStudio console, run:
 
-```r
+```{r, eval=FALSE}
 setwd("/home/rstudio/work")
 dir.create("outputs/01-structure-ddrad", recursive = TRUE, showWarnings = FALSE)
 system(
@@ -315,7 +315,7 @@ What StructureHarvester does:
 
 Inspect the output folder:
 
-```r
+```{r, eval=FALSE}
 system("ls /home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis")
 ```
 
@@ -329,18 +329,28 @@ Important files include:
 
 Move into the StructureHarvester output folder and inspect the CLUMPP input files:
 
-```r
+```{r, eval=FALSE}
 setwd("/home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis")
 system("ls *.indfile")
 ```
 
-The exact CLUMPP command depends on the `.indfile` and parameter file you want to use. The reference CLUMPP files provided with the practical are in:
+The reference CLUMPP files provided with the practical are in:
 
 `dataset-tutorial3/01-structure-ddrad/03-reference-clumpp-files/`
 
-One typical way to run CLUMPP is to loop across values of `K`:
+Copy the `paramfile` into the current folder. It specifies the parameters for CLUMPP, such as the number of clusters (K), the number of replicates, the number of individuals, and the input and output file names. 
 
 ```r
+file.copy(
+	from = "/home/rstudio/work/dataset-tutorial3/01-structure-ddrad/03-reference-clumpp-files/paramfile",
+	to = ".",
+	overwrite = TRUE
+)
+```
+
+One typical way to run CLUMPP is to loop across values of `K`:
+
+```{r, eval=FALSE}
 REPS <- 10
 INDS <- 64
 
@@ -355,7 +365,7 @@ for (K in 2:6) {
 }
 ```
 
-In this example:
+Here:
 
 - `-k` is the number of clusters
 - `-r` is the number of STRUCTURE replicates being aligned
