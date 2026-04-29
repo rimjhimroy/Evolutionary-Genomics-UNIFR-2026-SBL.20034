@@ -40,7 +40,8 @@ The practical is split into three main folders.
 - `dataset-practical3/`: the input files organised into numbered datasets
 
 Create an `outputs/` folder to store the results of your analyses.
-```mkdir -p outputs
+```bash
+mkdir -p work/outputs
 ```	
 
 The numbered datasets are:
@@ -51,11 +52,9 @@ The numbered datasets are:
 
 ## Working in Renku RStudio
 
-Use RStudio only.
 
-The important point is the working directory. The scripts now use paths relative to the practical root folder, not relative to `scripts/`.
 
-Check that you are in the practical root with:
+Check that you are in the practical root with the following commands in the RStudio console:
 
 ```r
 getwd()
@@ -63,10 +62,18 @@ setwd("work")
 list.files()
 ```
 
+Check that you are in the practical root with the following commands in the RStudio terminal:
+
+```bash
+pwd
+cd work
+ls
+```
+
 You should see folders such as:
 
 - `dataset-practical3`
-- `scripts`
+- `Evolutionary-Genomics-UNIFR-2026-SBL.20034`
 - `outputs`
 
 
@@ -116,7 +123,7 @@ It contains genotypic data from 64 diploid individuals scored at 1,127 genetic l
 
 How the file is organised:
 
-- first row, optionally: marker names, with one locus name per column; STRUCTURE can use these as references, but they are not required for the program to run
+- first row: marker names, with one locus name per column
 - following rows: genotype data, with each individual represented by two consecutive rows, one for each chromosome copy; for 64 diploid individuals, that means 128 genotype rows
 - first column: the individual ID, repeated on both rows for that sample so you can track which two rows belong to the same individual
 
