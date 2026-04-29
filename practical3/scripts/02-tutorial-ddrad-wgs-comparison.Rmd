@@ -1,0 +1,742 @@
+---
+title: "Practical 3 Part 2: ddRAD and WGS comparison"
+output: html_document
+---
+
+## Hide setup details
+
+This first chunk only sets notebook-wide options. Students can leave it unchanged.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load packages
+
+Load the R packages needed for PCA, diversity summaries, Mantel tests, and plotting.
+
+```{r libraries}
+library(adegenet)
+library(cowplot)
+library(dplyr)
+library(ggplot2)
+library(hierfstat)
+library(tidyr)
+library(vcfR)
+library(vegan)
+```
+
+## Set plot theme and paths
+
+Define the shared plotting style, the output folder, and the population order used throughout the analysis.
+
+```{r options}
+theme_set(
+        theme_minimal(base_size = 11) +
+                theme(
+                        plot.title.position = "plot",
+                        legend.position = "bottom",
+                        panel.grid.minor = element_blank()
+                )
+)
+
+output_dir <- "outputs/02-ddrad-wgs-population-comparison"
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+population_order <- c("A2G", "A2S", "V2B", "B2MV", "P2", "K2S2")
+population_colours <- c(
+        A2G = "#1B9E77",
+        A2S = "#D95F02",
+        V2B = "#7570B3",
+        B2MV = "#E7298A",
+        P2 = "#66A61E",
+        K2S2 = "#E6AB02"
+)
+
+make_loading_table <- function(pca_object, axes = 2, top_n = 20) {
+        loading_matrix <- as.data.frame(pca_object$loadings[, seq_len(axes), drop = FALSE])
+        loading_matrix$marker <- rownames(loading_matrix)
+
+        loading_long <- tidyr::pivot_longer(
+                loading_matrix,
+                cols = -marker,
+                names_to = "axis",
+                values_to = "loading"
+        )
+
+        loading_long$abs_loading <- abs(loading_long$loading)
+
+        loading_long |>
+                dplyr::group_by(axis) |>
+                dplyr::slice_max(order_by = abs_loading, n = top_n, with_ties = FALSE) |>
+                dplyr::ungroup() |>
+                dplyr::arrange(axis, dplyr::desc(abs_loading))
+}
+```
+
+## Read the input data
+
+Load the elevation table, the geographic distance matrix, and the ddRAD and WGS VCF files.
+
+```{r read-inputs}
+elevation_table <- read.table(
+        "dataset-practical3/02-ddrad-wgs-population-comparison/elevation.txt",
+        header = FALSE,
+        stringsAsFactors = FALSE
+)
+names(elevation_table) <- c("pop", "elevation_m")
+
+geo_table <- read.table(
+        "dataset-practical3/02-ddrad-wgs-population-comparison/geo_dist.txt",
+        header = TRUE,
+        check.names = FALSE
+)
+geo_matrix <- as.matrix(geo_table)
+
+ddrad_vcf <- read.vcfR(
+        "dataset-practical3/02-ddrad-wgs-population-comparison/ddRAD_filtered_pruned.vcf.gz",
+        verbose = FALSE
+)
+
+wgs_vcf <- read.vcfR(
+        "dataset-practical3/02-ddrad-wgs-population-comparison/diploids_bisnps_filt1rem_minDP4nc_maxDP1009rm_filtMAC4MAF01_MD02_pruned.vcf.gz",
+        verbose = FALSE
+)
+```
+
+## Prepare ddRAD metadata
+
+Extract sample names and population labels from the ddRAD VCF, then attach elevation information for plotting.
+
+```{r ddrad-metadata}
+ddrad_genlight <- vcfR2genlight(ddrad_vcf)
+ddrad_sample_ids <- indNames(ddrad_genlight)
+ddrad_populations <- sub("-.*", "", ddrad_sample_ids)
+ddrad_populations[ddrad_populations == "s2"] <- "K2S2"
+
+ddrad_metadata <- data.frame(
+        sample_id = ddrad_sample_ids,
+        pop = ddrad_populations,
+        stringsAsFactors = FALSE
+)
+ddrad_metadata$elevation_m <- elevation_table$elevation_m[match(ddrad_metadata$pop, elevation_table$pop)]
+ddrad_metadata$pop <- factor(ddrad_metadata$pop, levels = population_order)
+ddrad_metadata$elevation_band <- ifelse(ddrad_metadata$elevation_m >= 1000, "High", "Low")
+
+locNames(ddrad_genlight) <- paste(ddrad_vcf@fix[, 1], ddrad_vcf@fix[, 2], sep = "_")
+pop(ddrad_genlight) <- ddrad_metadata$pop
+```
+
+## Run ddRAD PCA
+
+Calculate the ddRAD PCA, save the explained variance table, and compute the coordinates needed for later PCA plots.
+
+```{r ddrad-pca}
+ddrad_pca <- glPca(ddrad_genlight, nf = 4)
+
+ddrad_explained_variance <- data.frame(
+        principal_component = paste0("PC", seq_along(ddrad_pca$eig)),
+        explained_variance_percent = round(100 * ddrad_pca$eig / sum(ddrad_pca$eig), 2)
+)
+
+ddrad_scores <- as.data.frame(ddrad_pca$scores[, 1:4, drop = FALSE])
+ddrad_scores$sample_id <- ddrad_metadata$sample_id
+ddrad_scores$pop <- ddrad_metadata$pop
+ddrad_scores$elevation_band <- ddrad_metadata$elevation_band
+
+ddrad_ellipse_scores <- ddrad_scores |>
+        dplyr::filter(is.finite(PC1), is.finite(PC2), !is.na(pop)) |>
+        dplyr::group_by(pop) |>
+        dplyr::filter(dplyr::n() >= 3) |>
+        dplyr::ungroup()
+
+ddrad_centroids <- aggregate(cbind(PC1, PC2) ~ pop, data = ddrad_scores, FUN = mean)
+
+write.table(
+        ddrad_explained_variance,
+        file = file.path(output_dir, "ddrad_pca_explained_variance.tsv"),
+        sep = "\t",
+        quote = FALSE,
+        row.names = FALSE
+)
+
+ddrad_explained_variance
+```
+
+## Plot ddRAD eigenvalues
+
+This scree-style plot shows how much variation is explained by each principal component in the ddRAD dataset.
+
+Question: Do the first one or two ddRAD axes capture most of the variation, or is the signal spread across several components?
+
+```{r ddrad-eigenvalues, fig.width=6.5, fig.height=4.5}
+ddrad_eigenvalue_plot <- ggplot(ddrad_explained_variance, aes(x = principal_component, y = explained_variance_percent)) +
+        geom_col(fill = "#1B9E77", width = 0.75) +
+        geom_text(aes(label = sprintf("%.1f", explained_variance_percent)), vjust = -0.3, size = 3) +
+        labs(title = "ddRAD PCA eigenvalues", x = "Principal component", y = "Explained variance (%)") +
+        theme_minimal(base_size = 11)
+
+ggsave(file.path(output_dir, "ddrad_pca_eigenvalues.png"), ddrad_eigenvalue_plot, width = 6.5, height = 4.5, dpi = 320)
+ddrad_eigenvalue_plot
+```
+
+## Plot ddRAD loadings
+
+These are the markers with the strongest absolute loadings on the first two ddRAD PCA axes. Large absolute values indicate markers that contribute strongly to that axis.
+
+Question: Are only a few ddRAD markers driving the first PCA axes, or do the strongest loadings look relatively evenly distributed?
+
+```{r ddrad-loadings, fig.width=9, fig.height=6}
+ddrad_loading_table <- make_loading_table(ddrad_pca, axes = 2, top_n = 20)
+ddrad_loading_table$marker <- factor(ddrad_loading_table$marker, levels = rev(unique(ddrad_loading_table$marker)))
+
+write.table(
+        ddrad_loading_table,
+        file = file.path(output_dir, "ddrad_pca_top_loadings.tsv"),
+        sep = "\t",
+        quote = FALSE,
+        row.names = FALSE
+)
+
+ddrad_loading_plot <- ggplot(ddrad_loading_table, aes(x = marker, y = loading, fill = axis)) +
+        geom_col(show.legend = FALSE) +
+        coord_flip() +
+        facet_wrap(~axis, scales = "free_y") +
+        labs(title = "ddRAD PCA top loadings", x = "Marker", y = "Loading") +
+        theme_minimal(base_size = 11)
+
+ggsave(file.path(output_dir, "ddrad_pca_top_loadings.png"), ddrad_loading_plot, width = 9, height = 6, dpi = 320)
+ddrad_loading_plot
+```
+
+## Plot ddRAD PCA
+
+This scatterplot shows how individuals cluster in ddRAD space along the first two principal components.
+
+```{r ddrad-pca-plot, fig.width=6.5, fig.height=5}
+ddrad_pca_plot <- ggplot(ddrad_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = ddrad_ellipse_scores, aes(group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.4, alpha = 0.9) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "ddRAD population structure",
+                x = paste0("PC1 (", ddrad_explained_variance$explained_variance_percent[1], "%)"),
+                y = paste0("PC2 (", ddrad_explained_variance$explained_variance_percent[2], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+ggsave(file.path(output_dir, "ddrad_pca.png"), ddrad_pca_plot, width = 6.5, height = 5, dpi = 320)
+ddrad_pca_plot
+```
+
+## Plot ddRAD PCA with centroids
+
+Add one centroid per population so it is easier to compare the centers of the ddRAD clusters.
+
+```{r ddrad-pca-centroids, fig.width=6.5, fig.height=5}
+ddrad_pca_centroid_plot <- ggplot(ddrad_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = ddrad_ellipse_scores, aes(group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2, alpha = 0.55) +
+        geom_point(data = ddrad_centroids, aes(x = PC1, y = PC2, colour = pop), inherit.aes = FALSE, shape = 4, size = 4.5, stroke = 1.2, show.legend = FALSE) +
+        geom_text(data = ddrad_centroids, aes(x = PC1, y = PC2, label = pop, colour = pop), inherit.aes = FALSE, nudge_y = 0.02, fontface = "bold", show.legend = FALSE) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "ddRAD PCA with population centroids",
+                x = paste0("PC1 (", ddrad_explained_variance$explained_variance_percent[1], "%)"),
+                y = paste0("PC2 (", ddrad_explained_variance$explained_variance_percent[2], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+ggsave(file.path(output_dir, "ddrad_pca_population_centroids.png"), ddrad_pca_centroid_plot, width = 6.5, height = 5, dpi = 320)
+ddrad_pca_centroid_plot
+```
+
+## Prepare WGS metadata
+
+Repeat the same metadata preparation steps for the WGS dataset so the two marker systems are handled in parallel.
+
+```{r wgs-metadata}
+wgs_genlight <- vcfR2genlight(wgs_vcf)
+wgs_sample_ids <- indNames(wgs_genlight)
+wgs_populations <- sub("-.*", "", wgs_sample_ids)
+wgs_populations[wgs_populations == "s2"] <- "K2S2"
+
+wgs_metadata <- data.frame(
+        sample_id = wgs_sample_ids,
+        pop = wgs_populations,
+        stringsAsFactors = FALSE
+)
+wgs_metadata$elevation_m <- elevation_table$elevation_m[match(wgs_metadata$pop, elevation_table$pop)]
+wgs_metadata$pop <- factor(wgs_metadata$pop, levels = population_order)
+wgs_metadata$elevation_band <- ifelse(wgs_metadata$elevation_m >= 1000, "High", "Low")
+
+locNames(wgs_genlight) <- paste(wgs_vcf@fix[, 1], wgs_vcf@fix[, 2], sep = "_")
+pop(wgs_genlight) <- wgs_metadata$pop
+```
+
+## Run WGS PCA
+
+Calculate the WGS PCA, save the explained variance table, and compute the coordinates needed for later WGS plots.
+
+```{r wgs-pca}
+wgs_pca <- glPca(wgs_genlight, nf = 4)
+
+wgs_explained_variance <- data.frame(
+        principal_component = paste0("PC", seq_along(wgs_pca$eig)),
+        explained_variance_percent = round(100 * wgs_pca$eig / sum(wgs_pca$eig), 2)
+)
+
+wgs_scores <- as.data.frame(wgs_pca$scores[, 1:4, drop = FALSE])
+wgs_scores$sample_id <- wgs_metadata$sample_id
+wgs_scores$pop <- wgs_metadata$pop
+wgs_scores$elevation_band <- wgs_metadata$elevation_band
+
+wgs_ellipse_scores <- wgs_scores |>
+        dplyr::filter(is.finite(PC1), is.finite(PC2), !is.na(pop)) |>
+        dplyr::group_by(pop) |>
+        dplyr::filter(dplyr::n() >= 3) |>
+        dplyr::ungroup()
+
+wgs_centroids <- aggregate(cbind(PC1, PC2) ~ pop, data = wgs_scores, FUN = mean)
+
+write.table(
+        wgs_explained_variance,
+        file = file.path(output_dir, "wgs_pca_explained_variance.tsv"),
+        sep = "\t",
+        quote = FALSE,
+        row.names = FALSE
+)
+
+wgs_explained_variance
+```
+
+## Plot WGS eigenvalues
+
+This scree-style plot shows how much variation is explained by each principal component in the WGS dataset.
+
+Question: Compared with ddRAD, does the WGS PCA show a steeper drop after the first few axes or a more gradual decline?
+
+```{r wgs-eigenvalues, fig.width=6.5, fig.height=4.5}
+wgs_eigenvalue_plot <- ggplot(wgs_explained_variance, aes(x = principal_component, y = explained_variance_percent)) +
+        geom_col(fill = "#7570B3", width = 0.75) +
+        geom_text(aes(label = sprintf("%.1f", explained_variance_percent)), vjust = -0.3, size = 3) +
+        labs(title = "WGS PCA eigenvalues", x = "Principal component", y = "Explained variance (%)") +
+        theme_minimal(base_size = 11)
+
+ggsave(file.path(output_dir, "wgs_pca_eigenvalues.png"), wgs_eigenvalue_plot, width = 6.5, height = 4.5, dpi = 320)
+wgs_eigenvalue_plot
+```
+
+## Plot WGS loadings
+
+These are the markers with the strongest absolute loadings on the first two WGS PCA axes. Large absolute values indicate markers that contribute strongly to that axis.
+
+Question: Do the top WGS loadings suggest a handful of especially influential markers, or a broader set of markers contributing to the PCA pattern?
+
+```{r wgs-loadings, fig.width=9, fig.height=6}
+wgs_loading_table <- make_loading_table(wgs_pca, axes = 2, top_n = 20)
+wgs_loading_table$marker <- factor(wgs_loading_table$marker, levels = rev(unique(wgs_loading_table$marker)))
+
+write.table(
+        wgs_loading_table,
+        file = file.path(output_dir, "wgs_pca_top_loadings.tsv"),
+        sep = "\t",
+        quote = FALSE,
+        row.names = FALSE
+)
+
+wgs_loading_plot <- ggplot(wgs_loading_table, aes(x = marker, y = loading, fill = axis)) +
+        geom_col(show.legend = FALSE) +
+        coord_flip() +
+        facet_wrap(~axis, scales = "free_y") +
+        labs(title = "WGS PCA top loadings", x = "Marker", y = "Loading") +
+        theme_minimal(base_size = 11)
+
+ggsave(file.path(output_dir, "wgs_pca_top_loadings.png"), wgs_loading_plot, width = 9, height = 6, dpi = 320)
+wgs_loading_plot
+```
+
+## Plot WGS PCA
+
+This scatterplot shows how individuals cluster in WGS space along the first two principal components.
+
+```{r wgs-pca-plot, fig.width=6.5, fig.height=5}
+wgs_pca_plot <- ggplot(wgs_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = wgs_ellipse_scores, aes(group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.4, alpha = 0.9) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "WGS population structure",
+                x = paste0("PC1 (", wgs_explained_variance$explained_variance_percent[1], "%)"),
+                y = paste0("PC2 (", wgs_explained_variance$explained_variance_percent[2], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+ggsave(file.path(output_dir, "wgs_pca.png"), wgs_pca_plot, width = 6.5, height = 5, dpi = 320)
+wgs_pca_plot
+```
+
+## Plot WGS PCA with centroids
+
+Add one centroid per population so it is easier to compare the centers of the WGS clusters.
+
+```{r wgs-pca-centroids, fig.width=6.5, fig.height=5}
+wgs_pca_centroid_plot <- ggplot(wgs_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = wgs_ellipse_scores, aes(group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2, alpha = 0.55) +
+        geom_point(data = wgs_centroids, aes(x = PC1, y = PC2, colour = pop), inherit.aes = FALSE, shape = 4, size = 4.5, stroke = 1.2, show.legend = FALSE) +
+        geom_text(data = wgs_centroids, aes(x = PC1, y = PC2, label = pop, colour = pop), inherit.aes = FALSE, nudge_y = 0.02, fontface = "bold", show.legend = FALSE) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "WGS PCA with population centroids",
+                x = paste0("PC1 (", wgs_explained_variance$explained_variance_percent[1], "%)"),
+                y = paste0("PC2 (", wgs_explained_variance$explained_variance_percent[2], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+ggsave(file.path(output_dir, "wgs_pca_population_centroids.png"), wgs_pca_centroid_plot, width = 6.5, height = 5, dpi = 320)
+wgs_pca_centroid_plot
+```
+
+## Compare the PCA panels
+
+Place the ddRAD and WGS PCA plots side by side so students can compare the two marker systems directly.
+
+```{r pca-panels, fig.width=11, fig.height=5.5}
+pca_overview <- cowplot::plot_grid(ddrad_pca_plot, wgs_pca_plot, ncol = 2, labels = c("A", "B"))
+pca_centroids <- cowplot::plot_grid(ddrad_pca_centroid_plot, wgs_pca_centroid_plot, ncol = 2, labels = c("A", "B"))
+
+ggsave(file.path(output_dir, "pca_overview.png"), pca_overview, width = 11, height = 5.5, dpi = 320)
+ggsave(file.path(output_dir, "pca_population_centroids.png"), pca_centroids, width = 11, height = 5.5, dpi = 320)
+
+pca_overview
+```
+
+## Calculate pairwise Fst
+
+Convert both datasets to `genind` objects and calculate the pairwise Fst matrix for each marker system.
+
+```{r genind-and-fst}
+ddrad_genind <- vcfR2genind(ddrad_vcf)
+pop(ddrad_genind) <- ddrad_metadata$pop
+ddrad_fst <- as.matrix(genet.dist(ddrad_genind, method = "Fst"))
+
+wgs_genind <- vcfR2genind(wgs_vcf)
+pop(wgs_genind) <- wgs_metadata$pop
+wgs_fst <- as.matrix(genet.dist(wgs_genind, method = "Fst"))
+
+reference_order <- population_order[population_order %in% rownames(ddrad_fst)]
+ddrad_fst <- ddrad_fst[reference_order, reference_order, drop = FALSE]
+wgs_fst <- wgs_fst[reference_order, reference_order, drop = FALSE]
+geo_matrix <- geo_matrix[reference_order, reference_order, drop = FALSE]
+
+write.table(ddrad_fst, file = file.path(output_dir, "ddrad_pairwise_fst.tsv"), sep = "\t", quote = FALSE, col.names = NA)
+write.table(wgs_fst, file = file.path(output_dir, "wgs_pairwise_fst.tsv"), sep = "\t", quote = FALSE, col.names = NA)
+
+ddrad_fst
+```
+
+## Calculate heterozygosity
+
+Summarize within-population variation as observed heterozygosity for both ddRAD and WGS.
+
+```{r heterozygosity-table}
+ddrad_basic_stats <- hierfstat::basic.stats(ddrad_genind)
+wgs_basic_stats <- hierfstat::basic.stats(wgs_genind)
+
+ddrad_heterozygosity <- data.frame(
+        pop = names(colMeans(ddrad_basic_stats$Ho, na.rm = TRUE)),
+        observed_heterozygosity = as.numeric(colMeans(ddrad_basic_stats$Ho, na.rm = TRUE)),
+        dataset = "ddRAD",
+        stringsAsFactors = FALSE
+)
+
+wgs_heterozygosity <- data.frame(
+        pop = names(colMeans(wgs_basic_stats$Ho, na.rm = TRUE)),
+        observed_heterozygosity = as.numeric(colMeans(wgs_basic_stats$Ho, na.rm = TRUE)),
+        dataset = "WGS",
+        stringsAsFactors = FALSE
+)
+
+heterozygosity_table <- rbind(ddrad_heterozygosity, wgs_heterozygosity)
+heterozygosity_table$pop <- factor(heterozygosity_table$pop, levels = population_order)
+
+write.table(
+        heterozygosity_table,
+        file = file.path(output_dir, "population_heterozygosity.tsv"),
+        sep = "\t",
+        quote = FALSE,
+        row.names = FALSE
+)
+
+heterozygosity_table
+```
+
+## Plot heterozygosity by population
+
+This barplot compares observed heterozygosity across populations and between the two datasets.
+
+```{r heterozygosity-plot, fig.width=8, fig.height=5}
+heterozygosity_plot <- ggplot(heterozygosity_table, aes(x = pop, y = observed_heterozygosity, fill = dataset)) +
+        geom_col(position = "dodge", width = 0.75) +
+        labs(title = "Observed heterozygosity by population", x = NULL, y = "Observed heterozygosity", fill = "Dataset") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave(file.path(output_dir, "population_heterozygosity.png"), heterozygosity_plot, width = 8, height = 5, dpi = 320)
+heterozygosity_plot
+```
+
+## Prepare Fst heatmap tables
+
+Convert both Fst matrices to long format so they can be plotted as heatmaps.
+
+```{r fst-heatmap-data}
+ddrad_fst_long <- as.data.frame(as.table(ddrad_fst), stringsAsFactors = FALSE)
+names(ddrad_fst_long) <- c("population_1", "population_2", "value")
+ddrad_fst_long$population_1 <- factor(ddrad_fst_long$population_1, levels = reference_order)
+ddrad_fst_long$population_2 <- factor(ddrad_fst_long$population_2, levels = rev(reference_order))
+
+wgs_fst_long <- as.data.frame(as.table(wgs_fst), stringsAsFactors = FALSE)
+names(wgs_fst_long) <- c("population_1", "population_2", "value")
+wgs_fst_long$population_1 <- factor(wgs_fst_long$population_1, levels = reference_order)
+wgs_fst_long$population_2 <- factor(wgs_fst_long$population_2, levels = rev(reference_order))
+```
+
+## Plot ddRAD Fst heatmap
+
+This heatmap shows the relative genetic differentiation among populations in the ddRAD dataset.
+
+```{r ddrad-fst-heatmap, fig.width=6, fig.height=5}
+ddrad_heatmap <- ggplot(ddrad_fst_long, aes(x = population_1, y = population_2, fill = value)) +
+        geom_tile(colour = "white", linewidth = 0.35) +
+        geom_text(aes(label = sprintf("%.3f", value)), size = 3) +
+        scale_fill_gradient(low = "#F7FBFF", high = "#08306B") +
+        labs(title = "ddRAD pairwise differentiation", x = NULL, y = NULL, fill = "Fst") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1), panel.grid = element_blank())
+
+ddrad_heatmap
+```
+
+## Plot WGS Fst heatmap
+
+This heatmap shows the relative genetic differentiation among populations in the WGS dataset.
+
+```{r wgs-fst-heatmap, fig.width=6, fig.height=5}
+wgs_heatmap <- ggplot(wgs_fst_long, aes(x = population_1, y = population_2, fill = value)) +
+        geom_tile(colour = "white", linewidth = 0.35) +
+        geom_text(aes(label = sprintf("%.3f", value)), size = 3) +
+        scale_fill_gradient(low = "#F7FBFF", high = "#08306B") +
+        labs(title = "WGS pairwise differentiation", x = NULL, y = NULL, fill = "Fst") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1), panel.grid = element_blank())
+
+wgs_heatmap
+```
+
+## Compare the Fst heatmaps
+
+Place the ddRAD and WGS heatmaps side by side to compare the overall differentiation pattern.
+
+```{r fst-heatmap-panel, fig.width=11, fig.height=5.5}
+fst_panel <- cowplot::plot_grid(ddrad_heatmap, wgs_heatmap, ncol = 2, labels = c("A", "B"))
+
+ggsave(file.path(output_dir, "pairwise_fst_heatmaps.png"), fst_panel, width = 11, height = 5.5, dpi = 320)
+fst_panel
+```
+
+## Build the ddRAD versus WGS Fst table
+
+Keep one value per population pair so you can compare ddRAD Fst and WGS Fst directly in a scatterplot.
+
+```{r fst-correlation-table}
+pair_index <- which(lower.tri(ddrad_fst), arr.ind = TRUE)
+fst_correlation_table <- data.frame(
+        population_1 = rownames(ddrad_fst)[pair_index[, 1]],
+        population_2 = colnames(ddrad_fst)[pair_index[, 2]],
+        ddrad_fst = ddrad_fst[lower.tri(ddrad_fst)],
+        wgs_fst = wgs_fst[lower.tri(wgs_fst)],
+        stringsAsFactors = FALSE
+)
+
+write.table(
+        fst_correlation_table,
+        file = file.path(output_dir, "ddrad_vs_wgs_fst_pairs.tsv"),
+        sep = "\t",
+        quote = FALSE,
+        row.names = FALSE
+)
+
+fst_correlation_table
+```
+
+## Plot ddRAD versus WGS Fst
+
+If the two marker systems tell a similar story, the points should follow a positive trend.
+
+```{r fst-correlation-plot, fig.width=7, fig.height=5.5}
+fst_correlation_plot <- ggplot(fst_correlation_table, aes(x = ddrad_fst, y = wgs_fst)) +
+        geom_point(size = 2.6, alpha = 0.85, colour = "#264653") +
+        geom_smooth(method = "lm", se = FALSE, linewidth = 0.5, colour = "black") +
+        geom_text(aes(label = paste(population_1, population_2, sep = "-")), nudge_y = 0.002, size = 3, check_overlap = TRUE) +
+        labs(title = "ddRAD versus WGS pairwise Fst", x = "ddRAD pairwise Fst", y = "WGS pairwise Fst")
+
+ggsave(file.path(output_dir, "ddrad_vs_wgs_fst_correlation.png"), fst_correlation_plot, width = 7, height = 5.5, dpi = 320)
+fst_correlation_plot
+```
+
+## Prepare Mantel test matrices
+
+Create the elevation distance matrix and save the geographic and elevation distance tables used in the Mantel tests.
+
+```{r mantel-inputs}
+elevation_matrix <- as.matrix(dist(elevation_table$elevation_m, method = "euclidean", diag = TRUE))
+rownames(elevation_matrix) <- elevation_table$pop
+colnames(elevation_matrix) <- elevation_table$pop
+elevation_matrix <- elevation_matrix[reference_order, reference_order, drop = FALSE]
+
+write.table(geo_matrix, file = file.path(output_dir, "geographic_distance_matrix.tsv"), sep = "\t", quote = FALSE, col.names = NA)
+write.table(elevation_matrix, file = file.path(output_dir, "elevation_distance_matrix.tsv"), sep = "\t", quote = FALSE, col.names = NA)
+```
+
+## Test isolation by distance
+
+Run Mantel tests to ask whether geographically distant populations are also more genetically differentiated.
+
+```{r ibd-tests}
+ddrad_ibd <- mantel(geo_matrix, ddrad_fst, permutations = 1000)
+wgs_ibd <- mantel(geo_matrix, wgs_fst, permutations = 1000)
+
+data.frame(
+        analysis = c("ddRAD IBD", "WGS IBD"),
+        statistic = c(unname(ddrad_ibd$statistic), unname(wgs_ibd$statistic)),
+        p_value = c(ddrad_ibd$signif, wgs_ibd$signif)
+)
+```
+
+## Prepare IBD scatterplots
+
+Extract the pairwise values needed to plot geographic distance against Fst for both datasets.
+
+```{r ibd-plot-data}
+ddrad_geo_pairs <- data.frame(
+        predictor = geo_matrix[upper.tri(geo_matrix)],
+        fst = ddrad_fst[upper.tri(ddrad_fst)]
+)
+
+wgs_geo_pairs <- data.frame(
+        predictor = geo_matrix[upper.tri(geo_matrix)],
+        fst = wgs_fst[upper.tri(wgs_fst)]
+)
+```
+
+```{r ddrad-ibd-plot, fig.width=6.5, fig.height=5}
+ddrad_geo_plot <- ggplot(ddrad_geo_pairs, aes(x = predictor, y = fst)) +
+        geom_point(size = 2.6, alpha = 0.85, colour = "#1B9E77") +
+        geom_smooth(method = "lm", se = FALSE, linewidth = 0.5, colour = "black") +
+        annotate("label", x = Inf, y = Inf, hjust = 1.02, vjust = 1.3,
+                 label = sprintf("Mantel r = %.3f\np = %.3f", unname(ddrad_ibd$statistic), ddrad_ibd$signif),
+                 size = 3, linewidth = 0.15, fill = "white") +
+        labs(title = "ddRAD: isolation by distance", x = "Geographic distance (km)", y = "Pairwise Fst")
+
+ddrad_geo_plot
+```
+
+```{r wgs-ibd-plot, fig.width=6.5, fig.height=5}
+wgs_geo_plot <- ggplot(wgs_geo_pairs, aes(x = predictor, y = fst)) +
+        geom_point(size = 2.6, alpha = 0.85, colour = "#7570B3") +
+        geom_smooth(method = "lm", se = FALSE, linewidth = 0.5, colour = "black") +
+        annotate("label", x = Inf, y = Inf, hjust = 1.02, vjust = 1.3,
+                 label = sprintf("Mantel r = %.3f\np = %.3f", unname(wgs_ibd$statistic), wgs_ibd$signif),
+                 size = 3, linewidth = 0.15, fill = "white") +
+        labs(title = "WGS: isolation by distance", x = "Geographic distance (km)", y = "Pairwise Fst")
+
+wgs_geo_plot
+```
+
+```{r ibe-tests}
+ddrad_ibe <- mantel.partial(ddrad_fst, elevation_matrix, geo_matrix, permutations = 1000)
+wgs_ibe <- mantel.partial(wgs_fst, elevation_matrix, geo_matrix, permutations = 1000)
+
+test_summary <- data.frame(
+        analysis = c(
+                "ddRAD IBD",
+                "WGS IBD",
+                "ddRAD IBE controlling for geography",
+                "WGS IBE controlling for geography"
+        ),
+        statistic = c(
+                unname(ddrad_ibd$statistic),
+                unname(wgs_ibd$statistic),
+                unname(ddrad_ibe$statistic),
+                unname(wgs_ibe$statistic)
+        ),
+        p_value = c(ddrad_ibd$signif, wgs_ibd$signif, ddrad_ibe$signif, wgs_ibe$signif)
+)
+
+write.table(
+        test_summary,
+        file = file.path(output_dir, "mantel_test_summary.tsv"),
+        sep = "\t",
+        quote = FALSE,
+        row.names = FALSE
+)
+
+test_summary
+```
+
+```{r ibe-plot-data}
+ddrad_elev_pairs <- data.frame(
+        predictor = elevation_matrix[upper.tri(elevation_matrix)],
+        fst = ddrad_fst[upper.tri(ddrad_fst)]
+)
+
+wgs_elev_pairs <- data.frame(
+        predictor = elevation_matrix[upper.tri(elevation_matrix)],
+        fst = wgs_fst[upper.tri(wgs_fst)]
+)
+```
+
+```{r ddrad-ibe-plot, fig.width=6.5, fig.height=5}
+ddrad_elev_plot <- ggplot(ddrad_elev_pairs, aes(x = predictor, y = fst)) +
+        geom_point(size = 2.6, alpha = 0.85, colour = "#D95F02") +
+        geom_smooth(method = "lm", se = FALSE, linewidth = 0.5, colour = "black") +
+        annotate("label", x = Inf, y = Inf, hjust = 1.02, vjust = 1.3,
+                 label = sprintf("Partial Mantel r = %.3f\np = %.3f", unname(ddrad_ibe$statistic), ddrad_ibe$signif),
+                 size = 3, linewidth = 0.15, fill = "white") +
+        labs(title = "ddRAD: elevation contrast", x = "Elevation difference (m)", y = "Pairwise Fst")
+
+ddrad_elev_plot
+```
+
+```{r wgs-ibe-plot, fig.width=6.5, fig.height=5}
+wgs_elev_plot <- ggplot(wgs_elev_pairs, aes(x = predictor, y = fst)) +
+        geom_point(size = 2.6, alpha = 0.85, colour = "#E7298A") +
+        geom_smooth(method = "lm", se = FALSE, linewidth = 0.5, colour = "black") +
+        annotate("label", x = Inf, y = Inf, hjust = 1.02, vjust = 1.3,
+                 label = sprintf("Partial Mantel r = %.3f\np = %.3f", unname(wgs_ibe$statistic), wgs_ibe$signif),
+                 size = 3, linewidth = 0.15, fill = "white") +
+        labs(title = "WGS: elevation contrast", x = "Elevation difference (m)", y = "Pairwise Fst")
+
+wgs_elev_plot
+```
+
+```{r mantel-panels, fig.width=11, fig.height=8}
+mantel_panel <- cowplot::plot_grid(
+        ddrad_geo_plot,
+        wgs_geo_plot,
+        ddrad_elev_plot,
+        wgs_elev_plot,
+        ncol = 2,
+        labels = c("A", "B", "C", "D")
+)
+
+ggsave(file.path(output_dir, "mantel_relationships.png"), mantel_panel, width = 11, height = 8, dpi = 320)
+mantel_panel
+```
+
+```{r finished}
+message("Finished PCA, Fst, IBD, and IBE analyses. Results were written to: ", output_dir)
+```

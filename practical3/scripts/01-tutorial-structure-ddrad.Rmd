@@ -1,0 +1,256 @@
+---
+title: "Practical 3 Part 1: STRUCTURE from ddRAD SNPs"
+output: html_document
+---
+
+## Hide setup details
+
+This first chunk only sets global notebook options. Students do not need to edit it.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load packages
+
+Load the R packages used for plotting, reshaping the ancestry table, and drawing the population map.
+
+```{r libraries}
+library(cowplot)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(rworldmap)
+```
+
+## Set output and input paths
+
+Define where results will be written and which precomputed files will be used in this part of the practical.
+
+```{r options}
+output_dir <- "outputs/01-structure-ddrad"
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+evanno_file <- "dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs/structureHarvester_analysis/evanno.txt"
+sample_metadata_file <- "dataset-tutorial3/01-structure-ddrad/04-sample-metadata/samples_xy.txt"
+```
+
+## Read the model-choice summary
+
+This chunk reads the Evanno summary table across values of `K`. These are the numbers you will use to decide which `K` is most strongly supported.
+
+```{r read-evanno-summary}
+evanno <- read.table(evanno_file, comment.char = "#", header = FALSE, stringsAsFactors = FALSE)
+colnames(evanno) <- c("k", "replicates", "mean_ln_prob", "sd_ln_prob", "ln_prime", "ln_double_prime", "delta_k")
+
+evanno$k <- as.numeric(evanno$k)
+evanno$mean_ln_prob <- as.numeric(evanno$mean_ln_prob)
+evanno$sd_ln_prob <- as.numeric(evanno$sd_ln_prob)
+evanno$delta_k <- as.numeric(evanno$delta_k)
+
+write.table(
+        evanno,
+        file.path(output_dir, "structure_evanno_summary.tsv"),
+        sep = "\t",
+        quote = FALSE,
+        row.names = FALSE
+)
+
+evanno
+```
+
+## Plot model choice
+
+Look at these two panels before doing anything else. The first shows how the mean log probability changes with `K`, and the second shows the Delta K criterion used to identify the most likely number of clusters.
+
+```{r plot-model-choice, fig.width=8, fig.height=7}
+ln_prob_plot <- ggplot(evanno, aes(x = k, y = mean_ln_prob)) +
+        geom_line(linewidth = 0.6, colour = "#264653") +
+        geom_point(size = 2.3, colour = "#264653") +
+        geom_errorbar(
+                aes(ymin = mean_ln_prob - sd_ln_prob, ymax = mean_ln_prob + sd_ln_prob),
+                width = 0.15,
+                linewidth = 0.45,
+                colour = "#264653"
+        ) +
+        scale_x_continuous(breaks = evanno$k) +
+        labs(title = "How support changes across K", x = "K", y = "Mean ln P(D)") +
+        theme_minimal(base_size = 11)
+
+delta_plot <- ggplot(evanno, aes(x = k, y = delta_k)) +
+        geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey70") +
+        geom_col(width = 0.75, fill = "#E76F51", na.rm = TRUE) +
+        scale_x_continuous(breaks = evanno$k) +
+        labs(title = "Use this panel to choose the best K", x = "K", y = "Delta K") +
+        theme_minimal(base_size = 11)
+
+model_choice_plot <- cowplot::plot_grid(
+        ln_prob_plot,
+        delta_plot,
+        ncol = 1,
+        align = "v",
+        rel_heights = c(1.1, 1)
+)
+
+ggsave(
+        file.path(output_dir, "structure_model_choice.png"),
+        model_choice_plot,
+        width = 8,
+        height = 7,
+        dpi = 320
+)
+
+model_choice_plot
+```
+
+## Choose the best K
+
+After inspecting the model-choice figure, replace the value below with the `K` you think best summarizes the data. Keep this as a deliberate student decision.
+
+```{r choose-best-k}
+# After looking at the model-choice figure above, replace 4 with the K you think is best.
+best_k <- 8
+
+best_k
+```
+
+## Read sample coordinates
+
+Load the table that contains the individual names, population labels, and map coordinates used for the final plots.
+
+```{r read-sample-metadata}
+samples_xy <- read.table(sample_metadata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+head(samples_xy)
+```
+
+## Read ancestry coefficients for the chosen K
+
+Now read the aligned CLUMPP membership file that matches your chosen `K`. This creates one ancestry coefficient column per inferred cluster.
+
+```{r read-membership-table}
+membership_file <- file.path(
+        "dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs/structureHarvester_analysis",
+        paste0("K", best_k, ".indfile")
+)
+
+membership_raw <- read.table(membership_file, header = FALSE, stringsAsFactors = FALSE)
+cluster_columns <- paste0("cluster_", seq_len(best_k))
+cluster_colours <- hcl.colors(best_k, palette = "Set 2")
+
+membership_values <- membership_raw[, (ncol(membership_raw) - best_k + 1):ncol(membership_raw)]
+colnames(membership_values) <- cluster_columns
+
+membership <- cbind(
+        ind = samples_xy$Ind,
+        X = samples_xy$X,
+        Y = samples_xy$Y,
+        pop = samples_xy$pop,
+        membership_values
+)
+
+write.table(
+        membership,
+        file.path(output_dir, paste0("structure_k", best_k, "_membership.tsv")),
+        sep = "\t",
+        quote = FALSE,
+        row.names = FALSE
+)
+
+head(membership)
+```
+
+## Reshape the ancestry table
+
+Convert the wide membership table into long format so it can be drawn easily as a stacked ancestry barplot.
+
+```{r reshape-membership-for-plot}
+membership_long <- reshape2::melt(membership[, c("ind", cluster_columns)], id.vars = "ind")
+colnames(membership_long) <- c("ind", "cluster", "value")
+membership_long$ind <- factor(membership_long$ind, levels = membership$ind)
+
+head(membership_long)
+```
+
+## Plot individual ancestry
+
+Each bar is one individual. The colored fractions show the estimated ancestry membership in each cluster for your chosen `K`.
+
+```{r ancestry-barplot, fig.width=12, fig.height=5}
+ancestry_barplot <- ggplot(membership_long, aes(x = ind, y = value, fill = cluster)) +
+        geom_bar(position = "fill", stat = "identity", width = 0.8) +
+        theme_minimal(base_size = 11) +
+        theme(axis.text.x = element_text(size = 8, angle = 90, hjust = 0.8, vjust = 0.5)) +
+        scale_fill_manual(values = cluster_colours) +
+        labs(
+                title = paste("Individual ancestry proportions for K =", best_k),
+                x = NULL,
+                y = "Membership coefficient",
+                fill = "Cluster"
+        )
+
+ggsave(
+        file.path(output_dir, paste0("structure_k", best_k, "_barplot.png")),
+        ancestry_barplot,
+        width = 12,
+        height = 5,
+        dpi = 320
+)
+
+ancestry_barplot
+```
+
+## Calculate population means
+
+Average the individual ancestry coefficients within each population. These mean values are used to build the population map.
+
+```{r population-means}
+population_means <- membership[, c("X", "Y", "pop", cluster_columns)] |>
+        dplyr::group_by(pop) |>
+        dplyr::summarise(dplyr::across(c("X", "Y", dplyr::all_of(cluster_columns)), mean), .groups = "drop")
+
+population_means
+```
+
+## Draw the population map
+
+This chunk places each population on the Switzerland map and adds a pie chart showing the mean ancestry proportions at that location.
+
+```{r population-map}
+map_x_limits <- c(min(population_means$X) - 2, max(population_means$X) + 2)
+map_y_limits <- c(min(population_means$Y) - 2, max(population_means$Y) + 2)
+
+png(file.path(output_dir, "population_sampling_map.png"), width = 8, height = 5, units = "in", res = 320)
+plot(
+        rworldmap::getMap(resolution = "low"),
+        xlim = map_x_limits,
+        ylim = map_y_limits,
+        asp = 1,
+        col = "white",
+        border = "grey65",
+        bg = "aliceblue"
+)
+rworldmap::mapPies(
+        population_means,
+        nameX = "X",
+        nameY = "Y",
+        symbolSize = 1,
+        nameZs = cluster_columns,
+        zColours = cluster_colours,
+        xlim = map_x_limits,
+        ylim = map_y_limits,
+        oceanCol = "aliceblue",
+        landCol = "white",
+        addCatLegend = FALSE
+)
+text(population_means$X, population_means$Y + 0.35, labels = population_means$pop, cex = 0.85, font = 2)
+title(main = paste("Population coordinates and mean admixture proportions for K =", best_k))
+dev.off()
+```
+
+## Finish the workflow
+
+Print a final message so students know the notebook has completed and where the output files were saved.
+
+```{r finished}
+message("Finished STRUCTURE plotting workflow. Results were written to: ", output_dir)
+```
