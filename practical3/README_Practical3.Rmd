@@ -91,6 +91,8 @@ Second, you switch to the larger precomputed run. That is the run used for Struc
 
 ### Part 1A - Run a short STRUCTURE example from the RStudio console
 
+The dataset folders are read-only on Renku. Read the input file from `dataset-tutorial3`, but create your parameter files and test outputs in a writable folder under `outputs/`.
+
 Check that you are in the practical root:
 
 ```r
@@ -98,11 +100,33 @@ getwd()
 list.files()
 ```
 
-Go to the STRUCTURE input folder:
+Inspect the STRUCTURE input folder:
 
 ```r
-setwd("dataset-tutorial3/01-structure-ddrad/01-structure-input")
+input_dir <- "dataset-tutorial3/01-structure-ddrad/01-structure-input"
+setwd(input_dir)
 getwd()
+list.files()
+```
+
+Now create a writable folder for your test run and move there:
+
+```r
+setwd("/home/rstudio/work")
+dir.create("outputs/01-structure-ddrad/small_structure_example", recursive = TRUE, showWarnings = FALSE)
+setwd("outputs/01-structure-ddrad/small_structure_example")
+getwd()
+```
+
+Copy the STRUCTURE input file into this writable folder:
+
+```r
+file.copy(
+	from = "/home/rstudio/work/dataset-tutorial3/01-structure-ddrad/01-structure-input/diploids_filt1rm_biSNPs_minDP15maxDP130nc_MAF005rm_MD02_pruned02_structure",
+	to = ".",
+	overwrite = TRUE
+)
+
 list.files()
 ```
 
@@ -197,7 +221,7 @@ These parameters configure STRUCTURE to perform **unbiased population clustering
 Make a folder for the test outputs:
 
 ```r
-system("mkdir -p small_structure_runs")
+dir.create("small_structure_runs", showWarnings = FALSE)
 ```
 
 Run a short example with a few values of `K` and a few replicates:
@@ -239,6 +263,13 @@ At this point, stop using the small run for downstream analysis.
 The small run is only there so you understand what a STRUCTURE command looks like and what kind of output files it creates.
 
 ### Part 1B - Move to the real precomputed STRUCTURE run
+
+Return to the practical root before continuing with the precomputed run:
+
+```r
+setwd("/home/rstudio/work")
+getwd()
+```
 
 In the previous steps, you ran STRUCTURE using a smaller number of replicates, with relatively short burnin and MCMC lengths. This was meant to help you understand how the software works and to check that everything runs correctly. However, to obtain reliable and robust results, STRUCTURE should be run for
 more replicates and with longer chains.  
