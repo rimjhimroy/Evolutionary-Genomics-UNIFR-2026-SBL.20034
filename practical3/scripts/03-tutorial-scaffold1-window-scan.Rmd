@@ -497,11 +497,3 @@ comparison_plot <- cowplot::plot_grid(ddrad_fst_plot, wgs_fst_plot, ncol = 1, al
 ggsave(file.path(output_dir, "ddrad_vs_wgs_fst.png"), comparison_plot, width = 9, height = 7, dpi = 320)
 comparison_plot
 ```
-
-## Finish the workflow
-
-Print a final message so students know the notebook has completed and where the output files were saved.
-
-```{r finished}
-message("Finished sliding-window differentiation analyses. Results were written to: ", output_dir)
-```

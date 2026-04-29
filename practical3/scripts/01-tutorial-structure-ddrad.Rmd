@@ -31,7 +31,7 @@ Define where results will be written and which precomputed files will be used in
 output_dir <- "outputs/01-structure-ddrad"
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-evanno_file <- "dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs/structureHarvester_analysis/evanno.txt"
+evanno_file <- file.path(output_dir, "structureHarvester_analysis", "evanno.txt")
 sample_metadata_file <- "dataset-tutorial3/01-structure-ddrad/04-sample-metadata/samples_xy.txt"
 ```
 
@@ -128,10 +128,7 @@ head(samples_xy)
 Now read the aligned CLUMPP membership file that matches your chosen `K`. This creates one ancestry coefficient column per inferred cluster.
 
 ```{r read-membership-table}
-membership_file <- file.path(
-        "dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs/structureHarvester_analysis",
-        paste0("K", best_k, ".indfile")
-)
+membership_file <- file.path(output_dir, "clumpp", paste0("clumpp_output_", best_k, ".txt"))
 
 membership_raw <- read.table(membership_file, header = FALSE, stringsAsFactors = FALSE)
 cluster_columns <- paste0("cluster_", seq_len(best_k))
@@ -245,12 +242,4 @@ rworldmap::mapPies(
 text(population_means$X, population_means$Y + 0.35, labels = population_means$pop, cex = 0.85, font = 2)
 title(main = paste("Population coordinates and mean admixture proportions for K =", best_k))
 dev.off()
-```
-
-## Finish the workflow
-
-Print a final message so students know the notebook has completed and where the output files were saved.
-
-```{r finished}
-message("Finished STRUCTURE plotting workflow. Results were written to: ", output_dir)
 ```

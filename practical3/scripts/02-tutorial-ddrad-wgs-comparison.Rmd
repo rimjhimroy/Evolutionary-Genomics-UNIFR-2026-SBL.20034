@@ -737,6 +737,3 @@ ggsave(file.path(output_dir, "mantel_relationships.png"), mantel_panel, width = 
 mantel_panel
 ```
 
-```{r finished}
-message("Finished PCA, Fst, IBD, and IBE analyses. Results were written to: ", output_dir)
-```
