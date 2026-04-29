@@ -283,7 +283,7 @@ The real analysis runs are already provided in:
 Go to that folder in the RStudio console:
 
 ```r
-setwd("../02-precomputed-structure-runs")
+setwd("dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs")
 list.files()
 setwd("ddRAD_results")
 list.files()
@@ -294,8 +294,16 @@ list.files()
 Still in the RStudio console, run:
 
 ```r
-setwd("..")
-system("structureHarvester.py --dir ddRAD_results --out structureHarvester_analysis --evanno --clumpp")
+setwd("/home/rstudio/work")
+dir.create("outputs/01-structure-ddrad", recursive = TRUE, showWarnings = FALSE)
+system(
+	paste(
+		"structureHarvester.py",
+		"--dir /home/rstudio/work/dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs/ddRAD_results",
+		"--out /home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis",
+		"--evanno --clumpp"
+	)
+)
 ```
 
 What StructureHarvester does:
@@ -308,7 +316,7 @@ What StructureHarvester does:
 Inspect the output folder:
 
 ```r
-system("ls structureHarvester_analysis")
+system("ls /home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis")
 ```
 
 Important files include:
@@ -322,7 +330,7 @@ Important files include:
 Move into the StructureHarvester output folder and inspect the CLUMPP input files:
 
 ```r
-setwd("structureHarvester_analysis")
+setwd("/home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis")
 system("ls *.indfile")
 ```
 
@@ -402,11 +410,13 @@ The script writes to `outputs/01-structure-ddrad/` and creates:
 - `structure_k4_barplot.png`: each bar is one individual; the colored fractions show the estimated ancestry membership in each cluster when `best_k <- 4`
 
 ### Questions to think about
-
-1. Which populations appear genetically homogeneous?
-2. Which populations show evidence of mixed ancestry?
-3. Does the spatial arrangement of populations help explain the ancestry pattern?
-4. Which value did you choose for `best_k`, and does the ancestry plot for that `K` support the same interpretation?
+1. Describe the observed spatial genetic structure based on your analysis of ddRADseq data.
+2. How do field populations relate to genetically-delineated populations?
+3. Are genetic clusters geographically consistent?
+4. Explain the pattern observed in the North of the Alps (e.g. field population V2BEU)?
+5. Which populations appear genetically homogeneous?
+6. Does the spatial arrangement of populations help explain the ancestry pattern?
+7. Which value did you choose for `best_k`, and does the ancestry plot for that `K` support the same interpretation?
 
 ## Part 2 - PCA, Pairwise Fst, IBD, and IBE
 
