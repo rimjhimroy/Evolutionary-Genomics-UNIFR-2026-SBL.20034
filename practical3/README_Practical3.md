@@ -1,0 +1,489 @@
+# Practical 3 - Population Structure and Genomic Differentiation in Biscutella
+
+This practical is designed to be run entirely from the RStudio session on Renku.
+
+## Overview
+
+In this practical, you will work with genomic SNP datasets generated from diploid individuals of the alpine plant `Biscutella laevigata`, collected from six natural populations across the Alps: three from low-elevation sites and three from high-elevation sites.
+
+Two types of genomic datasets are provided.
+
+1. ddRADseq dataset: this dataset was produced by reducing genome complexity through double-digest RAD sequencing on 64 individuals and yielded 1,127 SNPs after quality control and pruning of alleles in linkage disequilibrium (LD) > 0.2.
+2. Whole-genome sequencing dataset: this dataset is based on resequencing of a subset of 48 individuals and retains 11,475 SNPs after similar filtering for quality and LD (threshold > 0.2).
+
+These datasets are used to investigate population structure, genetic differentiation, and environmental associations using a range of population genomics tools.
+
+![Populations of Biscutella laevigata around the Alps](figures/practical3-overview-figure.png)
+
+*Figure 1. Population map of Biscutella laevigata around the Alps.*
+
+You will analyse genomic variation across the six Alpine populations, compare the reduced-representation SNP dataset with the whole-genome SNP dataset, and then zoom in on one scaffold to connect broad population structure with local genomic differentiation.
+
+## Biological context
+
+The dataset includes six populations distributed across the Alps.
+
+- Low-elevation populations: `A2G` (400 m), `V2B` (720 m), `K2S2` (380 m)
+- High-elevation populations: `A2S` (1760 m), `P2` (1575 m), `B2MV` (1880 m)
+
+Two SNP datasets are provided.
+
+- ddRAD dataset: 64 individuals and 1,127 LD-pruned SNPs
+- WGS dataset: 48 individuals and 11,475 LD-pruned SNPs
+
+The scaffold scan focuses on the neighbouring populations `A2G` and `A2S` to ask whether local genomic differentiation mirrors the broader structure seen across all six populations.
+
+## Folder layout
+
+The practical is split into three main folders.
+
+- `scripts/`: the three tutorial scripts you open in RStudio
+- `dataset-practical3/`: the input files organised into numbered datasets
+- `outputs/`: the figures and tables written by the scripts
+
+The numbered datasets are:
+
+- `dataset-practical3/01-structure-ddrad/`: STRUCTURE input, precomputed runs, reference CLUMPP files, and sample metadata
+- `dataset-practical3/02-ddrad-wgs-population-comparison/`: ddRAD and WGS VCFs, population distances, and elevation data
+- `dataset-practical3/03-scaffold1-window-scan/`: scaffold 1 ddRAD and WGS VCFs for the focal `A2G` and `A2S` comparison
+
+## Working in Renku RStudio
+
+Use RStudio only.
+
+The important point is the working directory. The scripts now use paths relative to the practical root folder, not relative to `scripts/`.
+
+Check that you are in the practical root with:
+
+```r
+getwd()
+setwd("work")
+list.files()
+```
+
+You should see folders such as:
+
+- `dataset-practical3`
+- `scripts`
+- `outputs`
+
+
+## Part 1 - Population Structure from ddRAD SNPs
+
+Dataset folder:
+
+`dataset-practical3/01-structure-ddrad/`
+
+Plotting script:
+
+`scripts/01-tutorial-structure-ddrad.R`
+
+### Goal of this part
+
+This part has two stages.
+
+First, you run a very small STRUCTURE analysis yourself in the RStudio terminal. The purpose is only to understand how a STRUCTURE run is launched and what files it produces.
+
+Second, you switch to the larger precomputed run. That is the run used for StructureHarvester, CLUMPP, the final plots, and the biological interpretation.
+
+### Part 1A - Run a short STRUCTURE example in the RStudio terminal
+
+Open the `Terminal` tab in RStudio.
+
+Check that you are in the practical root:
+
+```bash
+pwd
+ls
+```
+
+Go to the STRUCTURE input folder:
+
+```bash
+cd dataset-practical3/01-structure-ddrad/01-structure-input
+ls
+```
+
+The main input file is:
+
+`diploids_filt1rm_biSNPs_minDP15maxDP130nc_MAF005rm_MD02_pruned02_structure`
+
+This file contains the ddRAD SNP data in STRUCTURE format.
+
+It contains genotypic data from 64 diploid individuals scored at 1,127 genetic loci, each represented here as a biallelic SNP.
+
+How the file is organised:
+
+- first row, optionally: marker names, with one locus name per column; STRUCTURE can use these as references, but they are not required for the program to run
+- following rows: genotype data, with each individual represented by two consecutive rows, one for each chromosome copy; for 64 diploid individuals, that means 128 genotype rows
+- first column: the individual ID, repeated on both rows for that sample so you can track which two rows belong to the same individual
+
+A simplified example looks like this:
+
+```text
+ID   Locus1 Locus2 ... Locus1127
+Ind1 1      2      ... 3
+Ind1 1      3      ... 2
+Ind2 2      2      ... 4
+Ind2 2      3      ... 1
+```
+
+How to read the genotype codes:
+
+- alleles are coded as integers such as `1`, `2`, `3`, or `4`
+- These numbers represent different alleles at each locus.
+- For example, 1 might represent allele A, 2 might represent allele T, and so on.
+- missing genotype data are coded as `-9`
+
+What is not included here:
+
+- no extra metadata columns are included after the genotype columns
+- in other STRUCTURE datasets, you could add population of origin, sampling location, or similar metadata if the corresponding analysis settings expected them
+- in this practical dataset, clustering is run without those extra columns
+
+Create a short `mainparams` file for a small run:
+
+```bash
+cat > mainparams <<'EOF'
+#define INFILE diploids_filt1rm_biSNPs_minDP15maxDP130nc_MAF005rm_MD02_pruned02_structure
+#define OUTFILE small_run
+#define NUMINDS 64
+#define NUMLOCI 1127
+#define POPDATA 0
+#define POPFLAG 0
+#define PHENOTYPE 0
+#define EXTRACOLS 0
+#define MISSING -9
+#define PLOIDY 2
+#define LABEL 1
+#define MARKERNAMES 1
+#define BURNIN 10000
+#define NUMREPS 20000
+EOF
+```
+These are the core mainparams that define the scale and format of a STRUCTURE run. `NUMINDS 64` and `NUMLOCI 1127` tell STRUCTURE the dimensions of the dataset: 64 individuals genotyped at 1,127 loci. `PLOIDY 2` specifies that each individual is diploid, so STRUCTURE expects two alleles per locus. `LABEL 1` and `MARKERNAMES 1` indicate that the input file includes individual labels and locus names as headers. `MISSING -9` defines the code used to represent missing genotype data. `POPDATA 0` and `POPFLAG 0` mean no prior population assignments are provided, so clustering is performed entirely without supervision. `PHENOTYPE 0` and `EXTRACOLS 0` confirm there are no additional phenotype or extra data columns in the input file. Finally, `BURNIN 10000` and `NUMREPS 20000` set the MCMC schedule: the first 10,000 iterations are discarded as burn-in to allow the chain to converge, and the subsequent 20,000 iterations are used to estimate the posterior distributions of Q-values and allele frequencies.  
+
+Create a short `extraparams` file:
+
+```bash
+cat > extraparams <<'EOF'
+#define NOADMIX 0           # Allow admixture
+#define LINKAGE 0           # Assume independent loci
+#define USEPOPINFO 0        # Unbiased clustering
+#define LOCISPOP 0          # Global population info (not per-locus)
+
+#define INFERALPHA 1        # Infer alpha from data
+#define FREQSCORR 1         # Model allele frequency correlation
+
+#define COMPUTEPROB 1       # Enable Evanno K selection
+#define PRINTNET 1          # Output net distances
+#define PRINTQHAT 1         # Output ancestry proportions
+
+#define UPDATEFREQ 5000     # Output frequency
+#define RANDOMIZE 0         # Deterministic parameter updates
+EOF
+```
+
+These parameters configure STRUCTURE to perform **unbiased population clustering with standard statistical outputs**. Setting `NOADMIX 0` activates the admixture model, which allows each individual to draw a proportion of their ancestry from multiple clusters. `LINKAGE 0` tells STRUCTURE to treat all loci as statistically independent, which is the correct assumption here because our input SNPs have already been LD-pruned. `USEPOPINFO 0` and `LOCISPOP 0` tell STRUCTURE to discover population structure *de novo* without being guided by metadata—the algorithm finds clusters purely from genetic similarity. `INFERALPHA 1` allows STRUCTURE to learn the Dirichlet parameter α from the data itself, while `FREQSCORR 1` models realistic genetic differentiation between clusters by allowing allele frequencies to vary systematically across populations. `COMPUTEPROB 1` calculates the likelihood P(data|K) required for the Evanno ΔK method to select optimal K, `PRINTNET 1` outputs pairwise genetic distances between clusters, and `PRINTQHAT 1` outputs ancestry proportions for each individual. Finally, `UPDATEFREQ 5000` specifies how often allele frequencies are updated during the MCMC chain (every 5000 steps), and `RANDOMIZE 0` ensures parameters are updated in deterministic order for reproducible results across runs, promoting convergence stability.  
+
+Make a folder for the test outputs:
+
+```bash
+mkdir -p small_structure_runs
+```
+
+Run a short example with a few values of `K` and a few replicates:
+
+```bash
+for K in 1 2 3 4; do
+	for REP in 1 2 3; do
+		structure -K $K -m mainparams -e extraparams -o small_structure_runs/run_K${K}_rep${REP}
+	done
+done
+```
+
+What you are doing here:
+
+- `K` is the number of genetic clusters tested by STRUCTURE
+- each replicate is one independent MCMC run
+- replicates are needed because repeated Bayesian runs can converge slightly differently
+
+Inspect the output files:
+
+```bash
+ls small_structure_runs
+```
+
+You should see files ending in `_f`. These are the main STRUCTURE result files.
+
+At this point, stop using the small run for downstream analysis.
+
+The small run is only there so you understand what a STRUCTURE command looks like and what kind of output files it creates.
+
+### Part 1B - Move to the real precomputed STRUCTURE run
+
+For the real analysis, use the larger precomputed run already provided in:
+
+`dataset-practical3/01-structure-ddrad/02-precomputed-structure-runs/ddRAD_results/`
+
+These runs were computed with more replicates and much longer chains, so they are more stable and appropriate for model choice and ancestry plotting.
+
+Go to that folder in the terminal:
+
+```bash
+cd ../02-precomputed-structure-runs
+ls
+cd ddRAD_results
+ls | head
+```
+
+### Part 1C - Run StructureHarvester on the real precomputed run
+
+Still in the terminal, run:
+
+```bash
+cd ../02-precomputed-structure-runs
+structureHarvester.py --dir ddRAD_results --out structureHarvester_analysis --evanno --clumpp
+```
+
+What StructureHarvester does:
+
+- it reads all the STRUCTURE replicate files
+- it summarizes likelihood values across replicates
+- it calculates the Evanno statistics used to compare values of `K`
+- it prepares CLUMPP input files when `--clumpp` is used
+
+Inspect the output folder:
+
+```bash
+ls structureHarvester_analysis
+```
+
+Important files include:
+
+- `summary.txt`
+- `evanno.txt`
+- `.indfile` files prepared for CLUMPP
+
+### Part 1D - Run CLUMPP on the real precomputed run
+
+CLUMPP is used because repeated STRUCTURE runs can label clusters in different orders. For example, cluster 1 in one run may correspond to cluster 3 in another run. CLUMPP aligns these labels before runs are compared or summarized.
+
+Move into the StructureHarvester output folder and inspect the CLUMPP input files:
+
+```bash
+cd structureHarvester_analysis
+ls *.indfile
+```
+
+For this practical, the key point is that CLUMPP must be applied to the real set of repeated runs, not to the small teaching run.
+
+The exact CLUMPP command depends on the `.indfile` and parameter file you want to use. The reference CLUMPP files provided with the practical are in:
+
+`dataset-practical3/01-structure-ddrad/03-reference-clumpp-files/`
+
+Conceptually, this is the order:
+
+1. run many STRUCTURE replicates
+2. summarize them with StructureHarvester
+3. align cluster labels across replicates with CLUMPP
+4. make the final ancestry plot
+
+### Part 1E - Make the final plots in R
+
+Now return to RStudio and run:
+
+`scripts/01-tutorial-structure-ddrad.R`
+
+### What the plotting script does
+
+The script does not rerun STRUCTURE. Instead, it reads the larger precomputed results and turns them into figures.
+
+It will:
+
+- summarize all runs from `K = 1` to `K = 6`
+- calculate an Evanno-style summary table
+- make a Switzerland-referenced map with population coordinates and mean admixture proportions
+- select one representative `K = 4` run
+- extract the ancestry coefficients for each individual
+- draw the ancestry plots used in class discussion
+
+### How to run the plotting script in RStudio
+
+1. Make sure your working directory is the practical root.
+2. Open `scripts/01-tutorial-structure-ddrad.R`.
+3. Run the script.
+
+### Expected outputs
+
+The script writes to `outputs/01-structure-ddrad/` and creates:
+
+- `population_sampling_map.png`
+- `structure_model_choice.png`
+- `structure_evanno_summary.tsv`
+- `structure_k4_membership.tsv`
+- `structure_k4_barplot.png`
+- `structure_k4_population_summary.png`
+
+### How to read the figures
+
+- `population_sampling_map.png`: shows the six population coordinates over a Switzerland reference map, with a pie chart for the mean ancestry proportion of each population
+- `structure_model_choice.png`: shows how support changes across values of `K`; this helps decide how many clusters are a reasonable summary of the data
+- `structure_k4_barplot.png`: each bar is one individual; the colored fractions show the estimated ancestry membership in each cluster
+- `structure_k4_population_summary.png`: shows the average ancestry composition of each population
+
+### Questions to think about
+
+1. Which populations appear genetically homogeneous?
+2. Which populations show evidence of mixed ancestry?
+3. Does the spatial arrangement of populations help explain the ancestry pattern?
+4. Does the model-choice figure support the same interpretation as the `K = 4` plot?
+
+## Part 2 - PCA, Pairwise Fst, IBD, and IBE
+
+Dataset folder:
+
+`dataset-practical3/02-ddrad-wgs-population-comparison/`
+
+Script:
+
+`scripts/02-tutorial-ddrad-wgs-comparison.R`
+
+### What this script does
+
+This script asks whether ddRAD and WGS tell the same broad biological story.
+
+It does this in three ways:
+
+- PCA: asks whether individuals cluster similarly in the two datasets
+- pairwise `Fst`: asks which populations are most differentiated
+- Mantel tests: ask whether genetic differentiation is associated with geography, elevation, or both
+
+This clean version also adds three simple extension analyses:
+
+- observed heterozygosity by population
+- a ddRAD versus WGS pairwise `Fst` correlation scatterplot
+- PCA plots with population centroids
+
+### How to run it in RStudio
+
+1. Make sure your working directory is the practical root.
+2. Open `scripts/02-tutorial-ddrad-wgs-comparison.R`.
+3. Run the script.
+
+### Expected outputs
+
+The script writes to `outputs/02-ddrad-wgs-population-comparison/` and creates:
+
+- `pca_overview.png`
+- `pca_population_centroids.png`
+- `pairwise_fst_heatmaps.png`
+- `population_heterozygosity.png`
+- `population_heterozygosity.tsv`
+- `ddrad_vs_wgs_fst_correlation.png`
+- `ddrad_vs_wgs_fst_pairs.tsv`
+- `mantel_relationships.png`
+- `ddrad_pca_explained_variance.tsv`
+- `wgs_pca_explained_variance.tsv`
+- `ddrad_pairwise_fst.tsv`
+- `wgs_pairwise_fst.tsv`
+- `geographic_distance_matrix.tsv`
+- `elevation_distance_matrix.tsv`
+- `mantel_test_summary.tsv`
+
+### How to read the figures
+
+- `pca_overview.png`: each point is one individual; compare whether ddRAD and WGS separate the populations in similar ways
+- `pca_population_centroids.png`: the larger cross-shaped marks show the average PCA position of each population, which makes the population-level pattern easier to read
+- `pairwise_fst_heatmaps.png`: darker values mean stronger genetic differentiation between populations
+- `population_heterozygosity.png`: compares within-population diversity across populations and between ddRAD and WGS
+- `ddrad_vs_wgs_fst_correlation.png`: asks whether the two marker systems rank pairwise population differentiation similarly
+- `mantel_relationships.png`: each point is one pair of populations; the plots ask whether distance or elevation contrast is associated with stronger differentiation
+
+### Questions to think about
+
+1. Do ddRAD and WGS recover the same broad population structure?
+2. Which populations are consistently differentiated in both datasets?
+3. Does WGS reveal finer separation than ddRAD?
+4. Is the genetic pattern better explained by geography, elevation, or both?
+5. Which populations show the highest or lowest heterozygosity?
+6. Do ddRAD and WGS agree on which population pairs are most differentiated?
+
+## Part 3 - Sliding-Window Differentiation Along Scaffold 1
+
+Dataset folder:
+
+`dataset-practical3/03-scaffold1-window-scan/`
+
+Script:
+
+`scripts/03-tutorial-scaffold1-window-scan.R`
+
+### What this script does
+
+This script zooms in on scaffold 1 for the neighbouring populations `A2G` and `A2S`.
+
+It calculates:
+
+- sliding-window `Fst`
+- within-population nucleotide diversity (`pi`)
+- between-population divergence (`Dxy`)
+- Tajima's D for each population and for the combined dataset
+
+Reading these statistics together helps you decide whether a peak is only a relative differentiation signal or whether it is also a strong absolute divergence signal.
+
+### How to run it in RStudio
+
+1. Make sure your working directory is the practical root.
+2. Open `scripts/03-tutorial-scaffold1-window-scan.R`.
+3. Run the script.
+
+### Expected outputs
+
+The script writes to `outputs/03-scaffold1-window-scan/` and creates:
+
+- `wgs_scaffold1_window_stats.tsv`
+- `ddrad_scaffold1_window_stats.tsv`
+- `wgs_scaffold1_summary.png`
+- `ddrad_scaffold1_summary.png`
+- `ddrad_vs_wgs_fst.png`
+
+### How to read the figures
+
+- the top panel shows where differentiation is high along scaffold 1
+- the second panel shows whether within-population diversity changes in the same regions
+- the third panel shows whether absolute divergence also rises there
+- the fourth panel shows Tajima's D, which can help you think about selection or demographic history
+
+### Questions to think about
+
+1. Are the major `Fst` peaks shared between ddRAD and WGS?
+2. Do those peaks coincide with low `pi`, high `Dxy`, both, or neither?
+3. Does WGS reveal a clearer pattern than ddRAD?
+
+## Suggested order for students
+
+1. Start with the short terminal workflow for STRUCTURE, StructureHarvester, and CLUMPP.
+2. Then use StructureHarvester and CLUMPP on the larger precomputed STRUCTURE run.
+3. Then run the `K = 4` plotting script on the larger precomputed dataset.
+4. Move to the PCA and pairwise `Fst` comparison between ddRAD and WGS.
+5. Finish with the scaffold scan.
+
+## Troubleshooting
+
+If a script fails immediately, check these points first:
+
+1. `getwd()` should point to the practical root folder.
+2. `list.files()` should show `dataset-practical3`, `scripts`, and `outputs`.
+3. If package loading fails, run `renv::restore()` in the R console.
+
+## Deliverables for the practical session
+
+Keep the generated figures and answer the interpretation questions for each part.
+
+In your write-up, focus on these comparisons:
+
+- what ddRAD and WGS agree on
+- where WGS provides extra resolution
+- whether broad structure and local genomic peaks tell the same story
+- whether geography and elevation explain the same component of differentiation

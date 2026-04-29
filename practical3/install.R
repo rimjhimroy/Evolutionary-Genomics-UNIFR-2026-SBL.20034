@@ -44,6 +44,7 @@ if (file.exists(lockfile)) {
 cranPackages <- c(
   "optparse",
   "tidyverse",
+  "cowplot",
   "data.table",
   "stringr",
   "locfit",
@@ -51,6 +52,7 @@ cranPackages <- c(
   "gridExtra",
   "vcfR",
   "agricolae",
+  "car",
   "lme4",
   "argparse",
   "adegenet",
@@ -61,7 +63,8 @@ cranPackages <- c(
   "vegan",
   "graph4lg",
   "reshape2",
-  "rworldmap"
+  "rworldmap",
+  "poolfstat"
 )
 
 renv::install(cranPackages, project = project)

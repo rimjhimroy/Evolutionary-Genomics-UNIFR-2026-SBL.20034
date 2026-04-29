@@ -6,14 +6,24 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ca-certificates \
+    bwa \
+    libc6-i386 \
     curl \
     git \
     locales \
+    perl \
+    perl-doc \
+    cpanminus \
+    default-jre \
+    python3 \
+    samtools \
+    unzip \
     build-essential \
     gfortran \
     pkg-config \
     cmake \
     gdal-bin \
+    libgsl-dev \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
@@ -87,6 +97,38 @@ COPY --chown=root:root install.R /tmp/install.R
 RUN chmod +x /tmp/.renv_install.sh \
   && su - rstudio -c 'bash /tmp/.renv_install.sh' \
   && rm -f /tmp/.renv_install.sh /tmp/install.R
+
+RUN cpanm --notest Text::NSP::Measures::2D::Fisher::twotailed \
+  && mkdir -p /opt/popoolation2 \
+  && curl -fsSL https://sourceforge.net/projects/popoolation2/files/popoolation2_1201.zip/download -o /tmp/popoolation2.zip \
+  && unzip -q /tmp/popoolation2.zip -d /opt/popoolation2 \
+  && find /opt/popoolation2 -type f \( -name '*.pl' -o -name '*.jar' \) -exec chmod 0755 {} + \
+  && rm -f /tmp/popoolation2.zip \
+  && rm -rf /root/.cpanm
+
+RUN git clone --depth 1 https://github.com/lucaferretti/npstat.git /tmp/npstat \
+  && make -C /tmp/npstat \
+  && install -m 0755 /tmp/npstat/npstat /usr/local/bin/npstat \
+  && rm -rf /tmp/npstat
+
+RUN mkdir -p /opt/structure \
+  && curl -fsSL https://web.stanford.edu/group/pritchardlab/structure_software/release_versions/v2.3.4/release/structure_linux_console.tar.gz -o /tmp/structure_linux_console.tar.gz \
+  && tar -xzf /tmp/structure_linux_console.tar.gz -C /opt/structure \
+  && install -m 0755 /opt/structure/console/structure /usr/local/bin/structure \
+  && rm -f /tmp/structure_linux_console.tar.gz
+
+RUN mkdir -p /opt/clumpp \
+  && curl -fsSL https://rosenberglab.stanford.edu/software/CLUMPP_Linux64.1.1.2.tar.gz -o /tmp/CLUMPP_Linux64.1.1.2.tar.gz \
+  && tar -xzf /tmp/CLUMPP_Linux64.1.1.2.tar.gz -C /opt/clumpp \
+  && install -m 0755 /opt/clumpp/CLUMPP_Linux64.1.1.2/CLUMPP /usr/local/bin/CLUMPP \
+  && rm -f /tmp/CLUMPP_Linux64.1.1.2.tar.gz
+
+RUN git clone --depth 1 https://github.com/dentearl/structureHarvester.git /opt/structureHarvester \
+  && chmod 0755 /opt/structureHarvester/structureHarvester.py \
+  && printf '%s\n' '#!/bin/sh' 'exec python3 /opt/structureHarvester/structureHarvester.py "$@"' > /usr/local/bin/structureHarvester.py \
+  && chmod 0755 /usr/local/bin/structureHarvester.py
+
+ENV PATH=/opt/popoolation2/popoolation2_1201:/opt/popoolation2/popoolation2_1201/export:/opt/popoolation2/popoolation2_1201/indel_filtering:/opt/structureHarvester:${PATH}
 
 # Put a short usage README in the user's home directory.
 COPY --chown=rstudio:rstudio README.home.Rmd /home/rstudio/README.Rmd
