@@ -389,7 +389,7 @@ It will:
 1. Make sure your working directory is the practical root, i.e. inside the `work/` folder.
 2. Open `scripts/01-tutorial-structure-ddrad.Rmd`.
 3. Run the model-choice chunks first and inspect `structure_model_choice.png`.
-4. In the `choose-best-k` chunk, fill in the value of `best_k` that you infer from the model-choice figure.
+4. In the `choose-best-k` chunk, fill in the value of `best_k` that you infer from the model-choice figure. Choose the best K based on the Evanno method (Evanno et al 2005), where delta K reaches its highest peak.
 5. Run the remaining chunks to draw the ancestry barplot and population map for your chosen `K`.
 
 
