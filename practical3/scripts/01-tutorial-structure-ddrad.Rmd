@@ -25,12 +25,12 @@ library(reshape2)
 library(rworldmap)
 ```
 
-## Set the practical root directory
+## Confirm the knitr working directory
 
-Move to the scripts directory before reading inputs or writing outputs.
+Check that this notebook is running from the Renku root directory set in the setup chunk.
 
 ```{r working-directory}
-setwd("/home/rstudio/work/Evolutionary-Genomics-UNIFR-2026-SBL.20034/practical3/scripts")
+practical_root <- "/home/rstudio/work"
 getwd()
 ```
 
