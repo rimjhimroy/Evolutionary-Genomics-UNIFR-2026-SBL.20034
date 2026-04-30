@@ -390,7 +390,7 @@ It will:
 - read the Evanno summary for `K = 1` to `K = 6`
 - decide which value of `K` is best supported
 - read the aligned CLUMPP membership coefficients for the `K` you chose
-- make a Switzerland-referenced map with population coordinates and mean admixture proportions
+- plot the population locations and show the mean admixture proportions for each population
 - combine those ancestry coefficients with the sample coordinates
 - draw the ancestry plots used in class discussion
 
@@ -410,14 +410,14 @@ The script writes to `outputs/01-structure-ddrad/` and creates:
 - `population_sampling_map.png`
 - `structure_model_choice.png`
 - `structure_evanno_summary.tsv`
-- `structure_k4_membership.tsv` if you set `best_k <- 4`
-- `structure_k4_barplot.png` if you set `best_k <- 4`
+- `structure_k8_membership.tsv` if you set `best_k <- 8`
+- `structure_k8_barplot.png` if you set `best_k <- 8`
 
 ### How to read the figures
 
 - `population_sampling_map.png`: shows the six population coordinates over a Switzerland reference map, with a pie chart for the mean ancestry proportion of each population
 - `structure_model_choice.png`: shows how support changes across values of `K`; inspect this first, then write your chosen value into the `best_k` chunk of the notebook
-- `structure_k4_barplot.png`: each bar is one individual; the colored fractions show the estimated ancestry membership in each cluster when `best_k <- 4`
+- `structure_k8_barplot.png`: each bar is one individual; the colored fractions show the estimated ancestry membership in each cluster when `best_k <- 8`
 
 ### Questions to think about
 1. Describe the observed spatial genetic structure based on your analysis of ddRADseq data.
@@ -426,7 +426,7 @@ The script writes to `outputs/01-structure-ddrad/` and creates:
 4. Explain the pattern observed in the North of the Alps (e.g. field population V2BEU)?
 5. Which populations appear genetically homogeneous?
 6. Does the spatial arrangement of populations help explain the ancestry pattern?
-7. Which value did you choose for `best_k`, and does the ancestry plot for that `K` support the same interpretation?
+
 
 ## Part 2 - PCA, Pairwise Fst, IBD, and IBE
 
@@ -448,11 +448,6 @@ It does this in three ways:
 - pairwise `Fst`: asks which populations are most differentiated
 - Mantel tests: ask whether genetic differentiation is associated with geography, elevation, or both
 
-This clean version also adds three simple extension analyses:
-
-- observed heterozygosity by population
-- a ddRAD versus WGS pairwise `Fst` correlation scatterplot
-- PCA plots with population centroids
 
 ### How to run it in RStudio
 
@@ -467,8 +462,6 @@ The script writes to `outputs/02-ddrad-wgs-population-comparison/` and creates:
 - `pca_overview.png`
 - `pca_population_centroids.png`
 - `pairwise_fst_heatmaps.png`
-- `population_heterozygosity.png`
-- `population_heterozygosity.tsv`
 - `ddrad_vs_wgs_fst_correlation.png`
 - `ddrad_vs_wgs_fst_pairs.tsv`
 - `mantel_relationships.png`
@@ -485,7 +478,6 @@ The script writes to `outputs/02-ddrad-wgs-population-comparison/` and creates:
 - `pca_overview.png`: each point is one individual; compare whether ddRAD and WGS separate the populations in similar ways
 - `pca_population_centroids.png`: the larger cross-shaped marks show the average PCA position of each population, which makes the population-level pattern easier to read
 - `pairwise_fst_heatmaps.png`: darker values mean stronger genetic differentiation between populations
-- `population_heterozygosity.png`: compares within-population diversity across populations and between ddRAD and WGS
 - `ddrad_vs_wgs_fst_correlation.png`: asks whether the two marker systems rank pairwise population differentiation similarly
 - `mantel_relationships.png`: each point is one pair of populations; the plots ask whether distance or elevation contrast is associated with stronger differentiation
 
@@ -495,8 +487,7 @@ The script writes to `outputs/02-ddrad-wgs-population-comparison/` and creates:
 2. Which populations are consistently differentiated in both datasets?
 3. Does WGS reveal finer separation than ddRAD?
 4. Is the genetic pattern better explained by geography, elevation, or both?
-5. Which populations show the highest or lowest heterozygosity?
-6. Do ddRAD and WGS agree on which population pairs are most differentiated?
+5. Do ddRAD and WGS agree on which population pairs are most differentiated?
 
 ## Part 3 - Sliding-Window Differentiation Along Scaffold 1
 
@@ -519,7 +510,6 @@ It calculates:
 - between-population divergence (`Dxy`)
 - Tajima's D for each population and for the combined dataset
 
-Reading these statistics together helps you decide whether a peak is only a relative differentiation signal or whether it is also a strong absolute divergence signal.
 
 ### How to run it in RStudio
 

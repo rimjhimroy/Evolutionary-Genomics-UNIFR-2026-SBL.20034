@@ -449,56 +449,6 @@ write.table(wgs_fst, file = file.path(output_dir, "wgs_pairwise_fst.tsv"), sep =
 ddrad_fst
 ```
 
-## Calculate heterozygosity
-
-Summarize within-population variation as observed heterozygosity for both ddRAD and WGS.
-
-```{r heterozygosity-table}
-ddrad_basic_stats <- hierfstat::basic.stats(ddrad_genind)
-wgs_basic_stats <- hierfstat::basic.stats(wgs_genind)
-
-ddrad_heterozygosity <- data.frame(
-        pop = names(colMeans(ddrad_basic_stats$Ho, na.rm = TRUE)),
-        observed_heterozygosity = as.numeric(colMeans(ddrad_basic_stats$Ho, na.rm = TRUE)),
-        dataset = "ddRAD",
-        stringsAsFactors = FALSE
-)
-
-wgs_heterozygosity <- data.frame(
-        pop = names(colMeans(wgs_basic_stats$Ho, na.rm = TRUE)),
-        observed_heterozygosity = as.numeric(colMeans(wgs_basic_stats$Ho, na.rm = TRUE)),
-        dataset = "WGS",
-        stringsAsFactors = FALSE
-)
-
-heterozygosity_table <- rbind(ddrad_heterozygosity, wgs_heterozygosity)
-heterozygosity_table$pop <- factor(heterozygosity_table$pop, levels = population_order)
-
-write.table(
-        heterozygosity_table,
-        file = file.path(output_dir, "population_heterozygosity.tsv"),
-        sep = "\t",
-        quote = FALSE,
-        row.names = FALSE
-)
-
-heterozygosity_table
-```
-
-## Plot heterozygosity by population
-
-This barplot compares observed heterozygosity across populations and between the two datasets.
-
-```{r heterozygosity-plot, fig.width=8, fig.height=5}
-heterozygosity_plot <- ggplot(heterozygosity_table, aes(x = pop, y = observed_heterozygosity, fill = dataset)) +
-        geom_col(position = "dodge", width = 0.75) +
-        labs(title = "Observed heterozygosity by population", x = NULL, y = "Observed heterozygosity", fill = "Dataset") +
-        theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggsave(file.path(output_dir, "population_heterozygosity.png"), heterozygosity_plot, width = 8, height = 5, dpi = 320)
-heterozygosity_plot
-```
-
 ## Prepare Fst heatmap tables
 
 Convert both Fst matrices to long format so they can be plotted as heatmaps.
