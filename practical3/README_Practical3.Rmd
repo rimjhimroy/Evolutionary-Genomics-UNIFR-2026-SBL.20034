@@ -103,13 +103,6 @@ Second, you switch to the larger precomputed run. That is the run used for Struc
 
 The dataset folders are read-only on Renku. Read the input file from `dataset-tutorial3`, but create your parameter files and test outputs in a writable folder under `outputs/`.
 
-Check that you are in the practical root:
-
-```{r, eval=FALSE}
-getwd()
-list.files()
-```
-
 Inspect the STRUCTURE input folder:
 
 ```{r, eval=FALSE}
@@ -261,7 +254,7 @@ parallel::mclapply(
 				shQuote(mainparams_file),
 				shQuote(extraparams_file),
 				shQuote(file.path(small_runs_dir, sprintf("run_K%d_rep%d", jobs$K[i], jobs$REP[i])))
-			)
+			), intern = TRUE
 		)
 	},
 	mc.cores = 4
@@ -289,13 +282,6 @@ The small run is only there so you understand what a STRUCTURE command looks lik
 
 ### Part 1B - Move to the real precomputed STRUCTURE run
 
-Return to the practical root before continuing with the precomputed run:
-
-```{r, eval=FALSE}
-setwd("/home/rstudio/work")
-getwd()
-```
-
 In the previous steps, you ran STRUCTURE using a smaller number of replicates, with relatively short burnin and MCMC lengths. This was meant to help you understand how the software works and to check that everything runs correctly. However, to obtain reliable and robust results, STRUCTURE should be run for
 more replicates and with longer chains.  
 To save time, weʼve already done this for you: we ran STRUCTURE with 10 independent chains for each K value from K = 1 to K = 6, using a burn-in period of 100,000 iterations followed by 1,000,000 MCMC iterations. You can now use these precomputed STRUCTURE outputs to carry out the final steps of your analysis.  
@@ -318,8 +304,7 @@ list.files()
 
 Still in the RStudio console, run:
 
-```{r, eval=FALSE}
-setwd("/home/rstudio/work")
+```{r, eval=FALSE, echo=FALSE}
 dir.create("/home/rstudio/work/outputs/01-structure-ddrad", recursive = TRUE, showWarnings = FALSE)
 system(
 	paste(
@@ -327,7 +312,7 @@ system(
 		"--dir /home/rstudio/work/dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs/ddRAD_results",
 		"--out /home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis",
 		"--evanno --clumpp"
-	)
+	), intern = TRUE
 )
 ```
 
@@ -364,7 +349,7 @@ The CLUMPP paramfile provided with the practical is in:
 
 Copy the `paramfile` into the current folder. It specifies the parameters for CLUMPP, such as the number of clusters (K), the number of replicates, the number of individuals, and the input and output file names. Most of these parameters will be overridden by the command-line arguments when you run CLUMPP, but the `paramfile` serves as a template for how to structure your CLUMPP runs.
 
-```r
+```{r, eval=FALSE}
 clumpp_dir <- "/home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis"
 
 file.copy(
@@ -376,23 +361,24 @@ file.copy(
 
 One typical way to run CLUMPP is to loop across values of `K`:
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, echo=FALSE}
 REPS <- 10
 INDS <- 64
 clumpp_dir <- "/home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis"
+setwd(clumpp_dir)
 
 for (K in 2:6) {
-	OUTFILE <- file.path(clumpp_dir, sprintf("clumpp_output_%d.txt", K))
+	OUTFILE <- sprintf("clumpp_output_%d.txt", K)
 	system(
 		sprintf(
 			"CLUMPP -k %d -r %d -c %d -i %s -o %s -j %s",
 			K,
 			REPS,
 			INDS,
-			shQuote(file.path(clumpp_dir, sprintf("K%d.indfile", K))),
-			shQuote(OUTFILE),
-			shQuote(file.path(clumpp_dir, sprintf("K%d.miscfile", K)))
-		)
+			sprintf("K%d.indfile", K),
+			OUTFILE,
+			sprintf("K%d.miscfile", K)
+		), intern = TRUE
 	)
 }
 ```
@@ -409,9 +395,9 @@ Here:
 
 ### Part 1E - Make the final plots in R
 
-Now return to RStudio and run:
+Now open the plotting script in RStudio:
 
-`scripts/01-tutorial-structure-ddrad.Rmd`
+`Evolutionary-Genomics-UNIFR-2026-SBL.20034/practical3/scripts/01-tutorial-structure-ddrad.Rmd`
 
 ### What the plotting script does
 
@@ -428,11 +414,9 @@ It will:
 
 ### How to run the plotting script in RStudio
 
-1. Make sure your working directory is the practical root, i.e. inside the `work/` folder.
-2. Open `scripts/01-tutorial-structure-ddrad.Rmd`.
-3. Run the model-choice chunks first and inspect `structure_model_choice.png`.
-4. In the `choose-best-k` chunk, fill in the value of `best_k` that you infer from the model-choice figure. Choose the best K based on the Evanno method (Evanno et al 2005), where delta K reaches its highest peak.
-5. Run the remaining chunks to draw the ancestry barplot and population map for your chosen `K`.
+1. Run the model-choice chunks first and inspect `structure_model_choice.png`.
+2. In the `choose-best-k` chunk, fill in the value of `best_k` that you infer from the model-choice figure. Choose the best K based on the Evanno method (Evanno et al 2005), where delta K reaches its highest peak.
+3. Run the remaining chunks to draw the ancestry barplot and population map for your chosen `K`.
 
 
 ### Expected outputs
@@ -468,7 +452,7 @@ Dataset folder:
 
 Script:
 
-`scripts/02-tutorial-ddrad-wgs-comparison.Rmd`
+`Evolutionary-Genomics-UNIFR-2026-SBL.20034/practical3/scripts/02-tutorial-ddrad-wgs-comparison.Rmd`
 
 ### What this script does
 
@@ -480,12 +464,6 @@ It does this in three ways:
 - pairwise `Fst`: asks which populations are most differentiated
 - Mantel tests: ask whether genetic differentiation is associated with geography, elevation, or both
 
-
-### How to run it in RStudio
-
-1. Make sure your working directory is the practical root.
-2. Open `scripts/02-tutorial-ddrad-wgs-comparison.Rmd`.
-3. Run the script.
 
 ### Expected outputs
 
@@ -529,7 +507,7 @@ Dataset folder:
 
 Script:
 
-`scripts/03-tutorial-scaffold1-window-scan.Rmd`
+`Evolutionary-Genomics-UNIFR-2026-SBL.20034/practical3/scripts/03-tutorial-scaffold1-window-scan.Rmd`
 
 ### What this script does
 
@@ -541,13 +519,6 @@ It calculates:
 - within-population nucleotide diversity (`pi`)
 - between-population divergence (`Dxy`)
 - Tajima's D for each population and for the combined dataset
-
-
-### How to run it in RStudio
-
-1. Make sure your working directory is the practical root.
-2. Open `scripts/03-tutorial-scaffold1-window-scan.Rmd`.
-3. Run the script.
 
 ### Expected outputs
 
