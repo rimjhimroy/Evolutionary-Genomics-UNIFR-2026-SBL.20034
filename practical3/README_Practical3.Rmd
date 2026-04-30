@@ -334,11 +334,11 @@ setwd("/home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis
 system("ls *.indfile")
 ```
 
-The reference CLUMPP files provided with the practical are in:
+The CLUMPP paramfile provided with the practical is in:
 
 `dataset-tutorial3/01-structure-ddrad/03-reference-clumpp-files/`
 
-Copy the `paramfile` into the current folder. It specifies the parameters for CLUMPP, such as the number of clusters (K), the number of replicates, the number of individuals, and the input and output file names. 
+Copy the `paramfile` into the current folder. It specifies the parameters for CLUMPP, such as the number of clusters (K), the number of replicates, the number of individuals, and the input and output file names. Most of these parameters will be overridden by the command-line arguments when you run CLUMPP, but the `paramfile` serves as a template for how to structure your CLUMPP runs.
 
 ```r
 file.copy(
