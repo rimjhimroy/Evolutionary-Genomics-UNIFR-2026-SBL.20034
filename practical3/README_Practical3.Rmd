@@ -240,11 +240,14 @@ dir.create("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_exampl
 
 Run a short example with a few values of `K` and a few replicates:
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, echo=FALSE}
 small_run_dir <- "/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example"
-mainparams_file <- file.path(small_run_dir, "mainparams")
-extraparams_file <- file.path(small_run_dir, "extraparams")
-small_runs_dir <- file.path(small_run_dir, "small_structure_runs")
+
+setwd(small_run_dir)
+
+mainparams_file <- "mainparams"
+extraparams_file <- "extraparams"
+small_runs_dir <- "small_structure_runs"
 
 jobs <- expand.grid(K = 1:4, REP = 1:3)
 
