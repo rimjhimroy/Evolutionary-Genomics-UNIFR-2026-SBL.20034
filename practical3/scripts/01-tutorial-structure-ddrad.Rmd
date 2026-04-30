@@ -5,10 +5,12 @@ output: html_document
 
 ## Hide setup details
 
-This first chunk only sets global notebook options. Students do not need to edit it.
+
+This first chunk only sets global notebook options. 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/home/rstudio/work")
 ```
 
 ## Load packages

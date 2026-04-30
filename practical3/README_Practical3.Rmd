@@ -46,6 +46,15 @@ The numbered datasets are:
 - `dataset-tutorial3/02-ddrad-wgs-population-comparison/`: ddRAD and WGS VCFs, population distances, and elevation data
 - `dataset-tutorial3/03-scaffold1-window-scan/`: scaffold 1 ddRAD and WGS VCFs for the focal `A2G` and `A2S` comparison
 
+
+
+This first chunk only sets global notebook options. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/home/rstudio/work")
+```
+
 Create an `outputs/` folder to store the results of your analyses.
 ```{r, eval=FALSE}
 system("mkdir -p /home/rstudio/work/outputs")
@@ -60,7 +69,6 @@ Check that you are in the practical root with the following commands in the RStu
 
 ```{r, eval=FALSE}
 getwd()
-setwd("/home/rstudio/work")
 list.files()
 system("pwd")
 system("ls")
@@ -114,7 +122,6 @@ list.files()
 Now create a writable folder for your test run and move there:
 
 ```{r, eval=FALSE}
-setwd("/home/rstudio/work")
 dir.create("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example", recursive = TRUE, showWarnings = FALSE)
 setwd("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example")
 getwd()
@@ -172,6 +179,7 @@ What is not included here:
 Create a short `mainparams` file for a small run:
 
 ```{r, eval=FALSE}
+setwd("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example")
 writeLines(
 	c(
 		"#define INFILE diploids_filt1rm_biSNPs_minDP15maxDP130nc_MAF005rm_MD02_pruned02_structure",
@@ -197,6 +205,7 @@ These are the core mainparams that define the scale and format of a STRUCTURE ru
 Create a short `extraparams` file:
 
 ```{r, eval=FALSE}
+setwd("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example")
 writeLines(
 	c(
 		"#define NOADMIX 0           # Allow admixture",
@@ -229,6 +238,7 @@ dir.create("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_exampl
 Run a short example with a few values of `K` and a few replicates:
 
 ```{r, eval=FALSE}
+setwd("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example")
 jobs <- expand.grid(K = 1:4, REP = 1:3)
 
 parallel::mclapply(
