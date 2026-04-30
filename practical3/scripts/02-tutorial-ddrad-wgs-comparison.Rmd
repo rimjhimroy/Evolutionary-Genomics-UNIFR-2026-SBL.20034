@@ -49,7 +49,7 @@ theme_set(
                 )
 )
 
-output_dir <- "../outputs/02-ddrad-wgs-population-comparison"
+output_dir <- "/home/rstudio/work/outputs/02-ddrad-wgs-population-comparison"
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 population_order <- c("A2G", "A2S", "V2B", "B2MV", "P2", "K2S2")
@@ -89,26 +89,26 @@ Load the elevation table, the geographic distance matrix, and the ddRAD and WGS 
 
 ```{r read-inputs}
 elevation_table <- read.table(
-        "../dataset-practical3/02-ddrad-wgs-population-comparison/elevation.txt",
+        "/home/rstudio/work/dataset-practical3/02-ddrad-wgs-population-comparison/elevation.txt",
         header = FALSE,
         stringsAsFactors = FALSE
 )
 names(elevation_table) <- c("pop", "elevation_m")
 
 geo_table <- read.table(
-        "../dataset-practical3/02-ddrad-wgs-population-comparison/geo_dist.txt",
+        "/home/rstudio/work/dataset-practical3/02-ddrad-wgs-population-comparison/geo_dist.txt",
         header = TRUE,
         check.names = FALSE
 )
 geo_matrix <- as.matrix(geo_table)
 
 ddrad_vcf <- read.vcfR(
-        "../dataset-practical3/02-ddrad-wgs-population-comparison/ddRAD_filtered_pruned.vcf.gz",
+        "/home/rstudio/work/dataset-practical3/02-ddrad-wgs-population-comparison/ddRAD_filtered_pruned.vcf.gz",
         verbose = FALSE
 )
 
 wgs_vcf <- read.vcfR(
-        "../dataset-practical3/02-ddrad-wgs-population-comparison/diploids_bisnps_filt1rem_minDP4nc_maxDP1009rm_filtMAC4MAF01_MD02_pruned.vcf.gz",
+        "/home/rstudio/work/dataset-practical3/02-ddrad-wgs-population-comparison/diploids_bisnps_filt1rem_minDP4nc_maxDP1009rm_filtMAC4MAF01_MD02_pruned.vcf.gz",
         verbose = FALSE
 )
 ```

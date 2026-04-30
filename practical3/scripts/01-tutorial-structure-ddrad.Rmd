@@ -37,11 +37,11 @@ getwd()
 Define where results will be written and which precomputed files will be used in this part of the practical.
 
 ```{r options}
-output_dir <- "../outputs/01-structure-ddrad"
+output_dir <- "/home/rstudio/work/outputs/01-structure-ddrad"
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 evanno_file <- file.path(output_dir, "structureHarvester_analysis", "evanno.txt")
-sample_metadata_file <- "../dataset-tutorial3/01-structure-ddrad/04-sample-metadata/samples_xy.txt"
+sample_metadata_file <- "/home/rstudio/work/dataset-tutorial3/01-structure-ddrad/04-sample-metadata/samples_xy.txt"
 ```
 
 ## Read the model-choice summary
@@ -118,7 +118,7 @@ After inspecting the model-choice figure, replace the value below with the `K` y
 
 ```{r choose-best-k}
 # After looking at the model-choice figure above, replace 4 with the K you think is best.
-best_k <- 8
+best_k <- 8 # <- REPLACE THIS NUMBER WITH YOUR CHOICE
 
 best_k
 ```

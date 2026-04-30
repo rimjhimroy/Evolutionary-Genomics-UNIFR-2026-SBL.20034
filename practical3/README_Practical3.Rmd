@@ -39,16 +39,18 @@ The practical is split into three main folders.
 - `Evolutionary-Genomics-UNIFR-2026-SBL.20034/practical3/scripts/`: the three tutorial scripts you open in RStudio
 - `dataset-practical3/`: the input files organised into numbered datasets
 
-Create an `outputs/` folder to store the results of your analyses.
-```{r, eval=FALSE}
-system("mkdir -p work/outputs")
-```	
 
 The numbered datasets are:
 
 - `dataset-tutorial3/01-structure-ddrad/`: STRUCTURE input, precomputed runs, reference CLUMPP files, and sample metadata
 - `dataset-tutorial3/02-ddrad-wgs-population-comparison/`: ddRAD and WGS VCFs, population distances, and elevation data
 - `dataset-tutorial3/03-scaffold1-window-scan/`: scaffold 1 ddRAD and WGS VCFs for the focal `A2G` and `A2S` comparison
+
+Create an `outputs/` folder to store the results of your analyses.
+```{r, eval=FALSE}
+system("mkdir -p /home/rstudio/work/outputs")
+```	
+
 
 ## Working in Renku RStudio
 
@@ -58,7 +60,7 @@ Check that you are in the practical root with the following commands in the RStu
 
 ```{r, eval=FALSE}
 getwd()
-setwd("work")
+setwd("/home/rstudio/work")
 list.files()
 system("pwd")
 system("ls")
@@ -103,7 +105,7 @@ list.files()
 Inspect the STRUCTURE input folder:
 
 ```{r, eval=FALSE}
-input_dir <- "dataset-tutorial3/01-structure-ddrad/01-structure-input"
+input_dir <- "/home/rstudio/work/dataset-tutorial3/01-structure-ddrad/01-structure-input"
 setwd(input_dir)
 getwd()
 list.files()
@@ -113,8 +115,8 @@ Now create a writable folder for your test run and move there:
 
 ```{r, eval=FALSE}
 setwd("/home/rstudio/work")
-dir.create("outputs/01-structure-ddrad/small_structure_example", recursive = TRUE, showWarnings = FALSE)
-setwd("outputs/01-structure-ddrad/small_structure_example")
+dir.create("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example", recursive = TRUE, showWarnings = FALSE)
+setwd("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example")
 getwd()
 ```
 
@@ -221,7 +223,7 @@ These parameters configure STRUCTURE to perform **unbiased population clustering
 Make a folder for the test outputs:
 
 ```{r, eval=FALSE}
-dir.create("small_structure_runs", showWarnings = FALSE)
+dir.create("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example/small_structure_runs", showWarnings = FALSE)
 ```
 
 Run a short example with a few values of `K` and a few replicates:
@@ -283,9 +285,9 @@ The real analysis runs are already provided in:
 Go to that folder in the RStudio console:
 
 ```{r, eval=FALSE}
-setwd("dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs")
+setwd("/home/rstudio/work/dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs")
 list.files()
-setwd("ddRAD_results")
+setwd("/home/rstudio/work/dataset-tutorial3/01-structure-ddrad/02-precomputed-structure-runs/ddRAD_results")
 list.files()
 ```
 
@@ -295,7 +297,7 @@ Still in the RStudio console, run:
 
 ```{r, eval=FALSE}
 setwd("/home/rstudio/work")
-dir.create("outputs/01-structure-ddrad", recursive = TRUE, showWarnings = FALSE)
+dir.create("/home/rstudio/work/outputs/01-structure-ddrad", recursive = TRUE, showWarnings = FALSE)
 system(
 	paste(
 		"structureHarvester.py",
