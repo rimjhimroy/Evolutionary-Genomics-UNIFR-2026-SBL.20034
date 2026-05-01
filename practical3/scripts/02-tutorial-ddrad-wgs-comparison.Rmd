@@ -9,7 +9,7 @@ output: html_document
 This first chunk only sets global notebook options. 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
 knitr::opts_knit$set(root.dir = "/home/rstudio/work")
 ```
 
@@ -26,15 +26,6 @@ library(hierfstat)
 library(tidyr)
 library(vcfR)
 library(vegan)
-```
-
-## Confirm the knitr working directory
-
-Check that this notebook is running from the Renku root directory set in the setup chunk.
-
-```{r working-directory}
-practical_root <- "/home/rstudio/work"
-getwd()
 ```
 
 ## Set plot theme and paths
@@ -63,26 +54,6 @@ population_colours <- c(
         P2 = "#66A61E",
         K2S2 = "#E6AB02"
 )
-
-make_loading_table <- function(pca_object, axes = 2, top_n = 20) {
-        loading_matrix <- as.data.frame(pca_object$loadings[, seq_len(axes), drop = FALSE])
-        loading_matrix$marker <- rownames(loading_matrix)
-
-        loading_long <- tidyr::pivot_longer(
-                loading_matrix,
-                cols = -marker,
-                names_to = "axis",
-                values_to = "loading"
-        )
-
-        loading_long$abs_loading <- abs(loading_long$loading)
-
-        loading_long |>
-                dplyr::group_by(axis) |>
-                dplyr::slice_max(order_by = abs_loading, n = top_n, with_ties = FALSE) |>
-                dplyr::ungroup() |>
-                dplyr::arrange(axis, dplyr::desc(abs_loading))
-}
 ```
 
 ## Read the input data
@@ -91,26 +62,26 @@ Load the elevation table, the geographic distance matrix, and the ddRAD and WGS 
 
 ```{r read-inputs}
 elevation_table <- read.table(
-        "/home/rstudio/work/dataset-practical3/02-ddrad-wgs-population-comparison/elevation.txt",
+        "/home/rstudio/work/dataset-tutorial3/02-ddrad-wgs-population-comparison/elevation.txt",
         header = FALSE,
         stringsAsFactors = FALSE
 )
 names(elevation_table) <- c("pop", "elevation_m")
 
 geo_table <- read.table(
-        "/home/rstudio/work/dataset-practical3/02-ddrad-wgs-population-comparison/geo_dist.txt",
+        "/home/rstudio/work/dataset-tutorial3/02-ddrad-wgs-population-comparison/geo_dist.txt",
         header = TRUE,
         check.names = FALSE
 )
 geo_matrix <- as.matrix(geo_table)
 
 ddrad_vcf <- read.vcfR(
-        "/home/rstudio/work/dataset-practical3/02-ddrad-wgs-population-comparison/ddRAD_filtered_pruned.vcf.gz",
+        "/home/rstudio/work/dataset-tutorial3/02-ddrad-wgs-population-comparison/ddRAD_filtered_pruned.vcf.gz",
         verbose = FALSE
 )
 
 wgs_vcf <- read.vcfR(
-        "/home/rstudio/work/dataset-practical3/02-ddrad-wgs-population-comparison/diploids_bisnps_filt1rem_minDP4nc_maxDP1009rm_filtMAC4MAF01_MD02_pruned.vcf.gz",
+        "/home/rstudio/work/dataset-tutorial3/02-ddrad-wgs-population-comparison/diploids_bisnps_filt1rem_minDP4nc_maxDP1009rm_filtMAC4MAF01_MD02_pruned.vcf.gz",
         verbose = FALSE
 )
 ```
@@ -146,9 +117,10 @@ Calculate the ddRAD PCA, save the explained variance table, and compute the coor
 ddrad_pca <- glPca(ddrad_genlight, nf = 4)
 
 ddrad_explained_variance <- data.frame(
-        principal_component = paste0("PC", seq_along(ddrad_pca$eig)),
+        principal_component = seq_along(ddrad_pca$eig),
         explained_variance_percent = round(100 * ddrad_pca$eig / sum(ddrad_pca$eig), 2)
 )
+ddrad_explained_variance$principal_component_label <- paste0("PC", ddrad_explained_variance$principal_component)
 
 ddrad_scores <- as.data.frame(ddrad_pca$scores[, 1:4, drop = FALSE])
 ddrad_scores$sample_id <- ddrad_metadata$sample_id
@@ -160,8 +132,6 @@ ddrad_ellipse_scores <- ddrad_scores |>
         dplyr::group_by(pop) |>
         dplyr::filter(dplyr::n() >= 3) |>
         dplyr::ungroup()
-
-ddrad_centroids <- aggregate(cbind(PC1, PC2) ~ pop, data = ddrad_scores, FUN = mean)
 
 write.table(
         ddrad_explained_variance,
@@ -181,9 +151,20 @@ This scree-style plot shows how much variation is explained by each principal co
 Question: Do the first one or two ddRAD axes capture most of the variation, or is the signal spread across several components?
 
 ```{r ddrad-eigenvalues, fig.width=6.5, fig.height=4.5}
-ddrad_eigenvalue_plot <- ggplot(ddrad_explained_variance, aes(x = principal_component, y = explained_variance_percent)) +
+ddrad_eigenvalue_data <- as.data.frame(ddrad_explained_variance)
+ddrad_eigenvalue_data$principal_component_num <- suppressWarnings(as.integer(sub("^PC", "", ddrad_eigenvalue_data$principal_component)))
+if (any(is.na(ddrad_eigenvalue_data$principal_component_num))) {
+        ddrad_eigenvalue_data$principal_component_num <- seq_len(nrow(ddrad_eigenvalue_data))
+}
+ddrad_eigenvalue_data$principal_component_label <- paste0("PC", ddrad_eigenvalue_data$principal_component_num)
+
+ddrad_eigenvalue_plot <- ggplot(ddrad_eigenvalue_data, aes(x = principal_component_num, y = explained_variance_percent)) +
         geom_col(fill = "#1B9E77", width = 0.75) +
         geom_text(aes(label = sprintf("%.1f", explained_variance_percent)), vjust = -0.3, size = 3) +
+        scale_x_continuous(
+                breaks = ddrad_eigenvalue_data$principal_component_num[seq(1, nrow(ddrad_eigenvalue_data), by = 5)],
+                labels = ddrad_eigenvalue_data$principal_component_label[seq(1, nrow(ddrad_eigenvalue_data), by = 5)]
+        ) +
         labs(title = "ddRAD PCA eigenvalues", x = "Principal component", y = "Explained variance (%)") +
         theme_minimal(base_size = 11)
 
@@ -193,13 +174,35 @@ ddrad_eigenvalue_plot
 
 ## Plot ddRAD loadings
 
-These are the markers with the strongest absolute loadings on the first two ddRAD PCA axes. Large absolute values indicate markers that contribute strongly to that axis.
+This plot shows the full distribution of ddRAD marker loadings across the first four PCA axes. Dense horizontal bands near zero mean that most markers contribute weakly, whereas isolated vertical spikes indicate a smaller number of especially influential markers. The exported top-loading table lists the 20 markers with the strongest absolute contributions on the first two axes.
 
-Question: Are only a few ddRAD markers driving the first PCA axes, or do the strongest loadings look relatively evenly distributed?
+Question: Do the first ddRAD axes look driven by a few concentrated loading peaks, or by many markers with modest effects?
 
 ```{r ddrad-loadings, fig.width=9, fig.height=6}
-ddrad_loading_table <- make_loading_table(ddrad_pca, axes = 2, top_n = 20)
-ddrad_loading_table$marker <- factor(ddrad_loading_table$marker, levels = rev(unique(ddrad_loading_table$marker)))
+ddrad_loading_matrix <- as.data.frame(ddrad_pca$loadings[, 1:4, drop = FALSE])
+colnames(ddrad_loading_matrix) <- paste0("PC", seq_len(ncol(ddrad_loading_matrix)))
+ddrad_loading_matrix$marker <- rownames(ddrad_loading_matrix)
+ddrad_loading_matrix$marker_index <- seq_len(nrow(ddrad_loading_matrix))
+
+ddrad_loading_table <- tidyr::pivot_longer(
+        ddrad_loading_matrix[, c("marker", "PC1", "PC2")],
+        cols = c("PC1", "PC2"),
+        names_to = "axis",
+        values_to = "loading"
+)
+ddrad_loading_table$abs_loading <- abs(ddrad_loading_table$loading)
+ddrad_loading_table <- ddrad_loading_table |>
+        dplyr::group_by(axis) |>
+        dplyr::slice_max(order_by = abs_loading, n = 20, with_ties = FALSE) |>
+        dplyr::ungroup() |>
+        dplyr::arrange(axis, dplyr::desc(abs_loading))
+
+ddrad_loading_plot_data <- tidyr::pivot_longer(
+        ddrad_loading_matrix[, c("marker_index", "PC1", "PC2", "PC3", "PC4")],
+        cols = c("PC1", "PC2", "PC3", "PC4"),
+        names_to = "axis",
+        values_to = "loading"
+)
 
 write.table(
         ddrad_loading_table,
@@ -209,11 +212,11 @@ write.table(
         row.names = FALSE
 )
 
-ddrad_loading_plot <- ggplot(ddrad_loading_table, aes(x = marker, y = loading, fill = axis)) +
-        geom_col(show.legend = FALSE) +
-        coord_flip() +
+ddrad_loading_plot <- ggplot(ddrad_loading_plot_data, aes(x = marker_index, y = loading)) +
+        geom_bin2d(bins = 70) +
         facet_wrap(~axis, scales = "free_y") +
-        labs(title = "ddRAD PCA top loadings", x = "Marker", y = "Loading") +
+        scale_fill_viridis_c(option = "C", name = "Count") +
+        labs(title = "ddRAD PCA loading distributions", x = "Marker index", y = "Loading") +
         theme_minimal(base_size = 11)
 
 ggsave(file.path(output_dir, "ddrad_pca_top_loadings.png"), ddrad_loading_plot, width = 9, height = 6, dpi = 320)
@@ -222,46 +225,75 @@ ddrad_loading_plot
 
 ## Plot ddRAD PCA
 
-This scatterplot shows how individuals cluster in ddRAD space along the first two principal components.
+These four panels show how individuals cluster in ddRAD space across several pairs of principal components. Looking beyond PC1 and PC2 helps distinguish whether separation is concentrated on the first axis pair or also appears on later axes.
 
-```{r ddrad-pca-plot, fig.width=6.5, fig.height=5}
-ddrad_pca_plot <- ggplot(ddrad_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
-        stat_ellipse(data = ddrad_ellipse_scores, aes(group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
-        geom_point(size = 2.4, alpha = 0.9) +
+```{r ddrad-pca-plot, fig.width=10, fig.height=8}
+ddrad_pca_plot_pc12 <- ggplot(ddrad_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = ddrad_ellipse_scores, aes(x = PC1, y = PC2, group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.1, alpha = 0.9) +
         scale_colour_manual(values = population_colours, drop = FALSE) +
         labs(
-                title = "ddRAD population structure",
+                title = "PC1 vs PC2",
                 x = paste0("PC1 (", ddrad_explained_variance$explained_variance_percent[1], "%)"),
                 y = paste0("PC2 (", ddrad_explained_variance$explained_variance_percent[2], "%)"),
                 colour = "Population",
                 shape = "Elevation"
         )
 
-ggsave(file.path(output_dir, "ddrad_pca.png"), ddrad_pca_plot, width = 6.5, height = 5, dpi = 320)
+ddrad_pca_plot_pc13 <- ggplot(ddrad_scores, aes(x = PC1, y = PC3, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = ddrad_ellipse_scores, aes(x = PC1, y = PC3, group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.1, alpha = 0.9) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "PC1 vs PC3",
+                x = paste0("PC1 (", ddrad_explained_variance$explained_variance_percent[1], "%)"),
+                y = paste0("PC3 (", ddrad_explained_variance$explained_variance_percent[3], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+ddrad_pca_plot_pc24 <- ggplot(ddrad_scores, aes(x = PC2, y = PC4, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = ddrad_ellipse_scores, aes(x = PC2, y = PC4, group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.1, alpha = 0.9) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "PC2 vs PC4",
+                x = paste0("PC2 (", ddrad_explained_variance$explained_variance_percent[2], "%)"),
+                y = paste0("PC4 (", ddrad_explained_variance$explained_variance_percent[4], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+ddrad_pca_plot_pc34 <- ggplot(ddrad_scores, aes(x = PC3, y = PC4, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = ddrad_ellipse_scores, aes(x = PC3, y = PC4, group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.1, alpha = 0.9) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "PC3 vs PC4",
+                x = paste0("PC3 (", ddrad_explained_variance$explained_variance_percent[3], "%)"),
+                y = paste0("PC4 (", ddrad_explained_variance$explained_variance_percent[4], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+ddrad_pca_panels <- cowplot::plot_grid(
+        ddrad_pca_plot_pc12,
+        ddrad_pca_plot_pc13,
+        ddrad_pca_plot_pc24,
+        ddrad_pca_plot_pc34,
+        ncol = 2,
+        align = "hv"
+)
+
+ddrad_pca_plot <- cowplot::plot_grid(
+        cowplot::ggdraw() + cowplot::draw_label("ddRAD population structure", fontface = "bold", x = 0.5, hjust = 0.5),
+        ddrad_pca_panels,
+        ncol = 1,
+        rel_heights = c(0.08, 1)
+)
+
+ggsave(file.path(output_dir, "ddrad_pca.png"), ddrad_pca_plot, width = 10, height = 8, dpi = 320)
 ddrad_pca_plot
-```
-
-## Plot ddRAD PCA with centroids
-
-Add one centroid per population so it is easier to compare the centers of the ddRAD clusters.
-
-```{r ddrad-pca-centroids, fig.width=6.5, fig.height=5}
-ddrad_pca_centroid_plot <- ggplot(ddrad_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
-        stat_ellipse(data = ddrad_ellipse_scores, aes(group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
-        geom_point(size = 2, alpha = 0.55) +
-        geom_point(data = ddrad_centroids, aes(x = PC1, y = PC2, colour = pop), inherit.aes = FALSE, shape = 4, size = 4.5, stroke = 1.2, show.legend = FALSE) +
-        geom_text(data = ddrad_centroids, aes(x = PC1, y = PC2, label = pop, colour = pop), inherit.aes = FALSE, nudge_y = 0.02, fontface = "bold", show.legend = FALSE) +
-        scale_colour_manual(values = population_colours, drop = FALSE) +
-        labs(
-                title = "ddRAD PCA with population centroids",
-                x = paste0("PC1 (", ddrad_explained_variance$explained_variance_percent[1], "%)"),
-                y = paste0("PC2 (", ddrad_explained_variance$explained_variance_percent[2], "%)"),
-                colour = "Population",
-                shape = "Elevation"
-        )
-
-ggsave(file.path(output_dir, "ddrad_pca_population_centroids.png"), ddrad_pca_centroid_plot, width = 6.5, height = 5, dpi = 320)
-ddrad_pca_centroid_plot
 ```
 
 ## Prepare WGS metadata
@@ -295,9 +327,10 @@ Calculate the WGS PCA, save the explained variance table, and compute the coordi
 wgs_pca <- glPca(wgs_genlight, nf = 4)
 
 wgs_explained_variance <- data.frame(
-        principal_component = paste0("PC", seq_along(wgs_pca$eig)),
+        principal_component = seq_along(wgs_pca$eig),
         explained_variance_percent = round(100 * wgs_pca$eig / sum(wgs_pca$eig), 2)
 )
+wgs_explained_variance$principal_component_label <- paste0("PC", wgs_explained_variance$principal_component)
 
 wgs_scores <- as.data.frame(wgs_pca$scores[, 1:4, drop = FALSE])
 wgs_scores$sample_id <- wgs_metadata$sample_id
@@ -309,8 +342,6 @@ wgs_ellipse_scores <- wgs_scores |>
         dplyr::group_by(pop) |>
         dplyr::filter(dplyr::n() >= 3) |>
         dplyr::ungroup()
-
-wgs_centroids <- aggregate(cbind(PC1, PC2) ~ pop, data = wgs_scores, FUN = mean)
 
 write.table(
         wgs_explained_variance,
@@ -330,9 +361,20 @@ This scree-style plot shows how much variation is explained by each principal co
 Question: Compared with ddRAD, does the WGS PCA show a steeper drop after the first few axes or a more gradual decline?
 
 ```{r wgs-eigenvalues, fig.width=6.5, fig.height=4.5}
-wgs_eigenvalue_plot <- ggplot(wgs_explained_variance, aes(x = principal_component, y = explained_variance_percent)) +
+wgs_eigenvalue_data <- as.data.frame(wgs_explained_variance)
+wgs_eigenvalue_data$principal_component_num <- suppressWarnings(as.integer(sub("^PC", "", wgs_eigenvalue_data$principal_component)))
+if (any(is.na(wgs_eigenvalue_data$principal_component_num))) {
+        wgs_eigenvalue_data$principal_component_num <- seq_len(nrow(wgs_eigenvalue_data))
+}
+wgs_eigenvalue_data$principal_component_label <- paste0("PC", wgs_eigenvalue_data$principal_component_num)
+
+wgs_eigenvalue_plot <- ggplot(wgs_eigenvalue_data, aes(x = principal_component_num, y = explained_variance_percent)) +
         geom_col(fill = "#7570B3", width = 0.75) +
         geom_text(aes(label = sprintf("%.1f", explained_variance_percent)), vjust = -0.3, size = 3) +
+        scale_x_continuous(
+                breaks = wgs_eigenvalue_data$principal_component_num[seq(1, nrow(wgs_eigenvalue_data), by = 5)],
+                labels = wgs_eigenvalue_data$principal_component_label[seq(1, nrow(wgs_eigenvalue_data), by = 5)]
+        ) +
         labs(title = "WGS PCA eigenvalues", x = "Principal component", y = "Explained variance (%)") +
         theme_minimal(base_size = 11)
 
@@ -342,13 +384,35 @@ wgs_eigenvalue_plot
 
 ## Plot WGS loadings
 
-These are the markers with the strongest absolute loadings on the first two WGS PCA axes. Large absolute values indicate markers that contribute strongly to that axis.
+This plot shows the full distribution of WGS marker loadings across the first four PCA axes. Broad dense bands near zero indicate many small contributions, while sharp spikes reveal loci with unusually strong influence on a given axis. The exported top-loading table still summarizes the strongest markers on PC1 and PC2.
 
-Question: Do the top WGS loadings suggest a handful of especially influential markers, or a broader set of markers contributing to the PCA pattern?
+Question: Compared with ddRAD, does the WGS loading pattern look more diffuse or more dominated by a few strong peaks?
 
 ```{r wgs-loadings, fig.width=9, fig.height=6}
-wgs_loading_table <- make_loading_table(wgs_pca, axes = 2, top_n = 20)
-wgs_loading_table$marker <- factor(wgs_loading_table$marker, levels = rev(unique(wgs_loading_table$marker)))
+wgs_loading_matrix <- as.data.frame(wgs_pca$loadings[, 1:4, drop = FALSE])
+colnames(wgs_loading_matrix) <- paste0("PC", seq_len(ncol(wgs_loading_matrix)))
+wgs_loading_matrix$marker <- rownames(wgs_loading_matrix)
+wgs_loading_matrix$marker_index <- seq_len(nrow(wgs_loading_matrix))
+
+wgs_loading_table <- tidyr::pivot_longer(
+        wgs_loading_matrix[, c("marker", "PC1", "PC2")],
+        cols = c("PC1", "PC2"),
+        names_to = "axis",
+        values_to = "loading"
+)
+wgs_loading_table$abs_loading <- abs(wgs_loading_table$loading)
+wgs_loading_table <- wgs_loading_table |>
+        dplyr::group_by(axis) |>
+        dplyr::slice_max(order_by = abs_loading, n = 20, with_ties = FALSE) |>
+        dplyr::ungroup() |>
+        dplyr::arrange(axis, dplyr::desc(abs_loading))
+
+wgs_loading_plot_data <- tidyr::pivot_longer(
+        wgs_loading_matrix[, c("marker_index", "PC1", "PC2", "PC3", "PC4")],
+        cols = c("PC1", "PC2", "PC3", "PC4"),
+        names_to = "axis",
+        values_to = "loading"
+)
 
 write.table(
         wgs_loading_table,
@@ -358,11 +422,11 @@ write.table(
         row.names = FALSE
 )
 
-wgs_loading_plot <- ggplot(wgs_loading_table, aes(x = marker, y = loading, fill = axis)) +
-        geom_col(show.legend = FALSE) +
-        coord_flip() +
+wgs_loading_plot <- ggplot(wgs_loading_plot_data, aes(x = marker_index, y = loading)) +
+        geom_bin2d(bins = 70) +
         facet_wrap(~axis, scales = "free_y") +
-        labs(title = "WGS PCA top loadings", x = "Marker", y = "Loading") +
+        scale_fill_viridis_c(option = "C", name = "Count") +
+        labs(title = "WGS PCA loading distributions", x = "Marker index", y = "Loading") +
         theme_minimal(base_size = 11)
 
 ggsave(file.path(output_dir, "wgs_pca_top_loadings.png"), wgs_loading_plot, width = 9, height = 6, dpi = 320)
@@ -371,58 +435,85 @@ wgs_loading_plot
 
 ## Plot WGS PCA
 
-This scatterplot shows how individuals cluster in WGS space along the first two principal components.
+These four panels show how individuals cluster in WGS space across several pairs of principal components. This makes it easier to compare whether later axes reveal additional structure beyond the dominant PC1-PC2 pattern.
 
-```{r wgs-pca-plot, fig.width=6.5, fig.height=5}
-wgs_pca_plot <- ggplot(wgs_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
-        stat_ellipse(data = wgs_ellipse_scores, aes(group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
-        geom_point(size = 2.4, alpha = 0.9) +
+```{r wgs-pca-plot, fig.width=10, fig.height=8}
+wgs_pca_plot_pc12 <- ggplot(wgs_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = wgs_ellipse_scores, aes(x = PC1, y = PC2, group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.1, alpha = 0.9) +
         scale_colour_manual(values = population_colours, drop = FALSE) +
         labs(
-                title = "WGS population structure",
+                title = "PC1 vs PC2",
                 x = paste0("PC1 (", wgs_explained_variance$explained_variance_percent[1], "%)"),
                 y = paste0("PC2 (", wgs_explained_variance$explained_variance_percent[2], "%)"),
                 colour = "Population",
                 shape = "Elevation"
         )
 
-ggsave(file.path(output_dir, "wgs_pca.png"), wgs_pca_plot, width = 6.5, height = 5, dpi = 320)
+wgs_pca_plot_pc13 <- ggplot(wgs_scores, aes(x = PC1, y = PC3, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = wgs_ellipse_scores, aes(x = PC1, y = PC3, group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.1, alpha = 0.9) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "PC1 vs PC3",
+                x = paste0("PC1 (", wgs_explained_variance$explained_variance_percent[1], "%)"),
+                y = paste0("PC3 (", wgs_explained_variance$explained_variance_percent[3], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+wgs_pca_plot_pc24 <- ggplot(wgs_scores, aes(x = PC2, y = PC4, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = wgs_ellipse_scores, aes(x = PC2, y = PC4, group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.1, alpha = 0.9) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "PC2 vs PC4",
+                x = paste0("PC2 (", wgs_explained_variance$explained_variance_percent[2], "%)"),
+                y = paste0("PC4 (", wgs_explained_variance$explained_variance_percent[4], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+wgs_pca_plot_pc34 <- ggplot(wgs_scores, aes(x = PC3, y = PC4, colour = pop, shape = elevation_band)) +
+        stat_ellipse(data = wgs_ellipse_scores, aes(x = PC3, y = PC4, group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
+        geom_point(size = 2.1, alpha = 0.9) +
+        scale_colour_manual(values = population_colours, drop = FALSE) +
+        labs(
+                title = "PC3 vs PC4",
+                x = paste0("PC3 (", wgs_explained_variance$explained_variance_percent[3], "%)"),
+                y = paste0("PC4 (", wgs_explained_variance$explained_variance_percent[4], "%)"),
+                colour = "Population",
+                shape = "Elevation"
+        )
+
+wgs_pca_panels <- cowplot::plot_grid(
+        wgs_pca_plot_pc12,
+        wgs_pca_plot_pc13,
+        wgs_pca_plot_pc24,
+        wgs_pca_plot_pc34,
+        ncol = 2,
+        align = "hv"
+)
+
+wgs_pca_plot <- cowplot::plot_grid(
+        cowplot::ggdraw() + cowplot::draw_label("WGS population structure", fontface = "bold", x = 0.5, hjust = 0.5),
+        wgs_pca_panels,
+        ncol = 1,
+        rel_heights = c(0.08, 1)
+)
+
+ggsave(file.path(output_dir, "wgs_pca.png"), wgs_pca_plot, width = 10, height = 8, dpi = 320)
 wgs_pca_plot
-```
-
-## Plot WGS PCA with centroids
-
-Add one centroid per population so it is easier to compare the centers of the WGS clusters.
-
-```{r wgs-pca-centroids, fig.width=6.5, fig.height=5}
-wgs_pca_centroid_plot <- ggplot(wgs_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_band)) +
-        stat_ellipse(data = wgs_ellipse_scores, aes(group = pop, colour = pop), type = "norm", linewidth = 0.4, alpha = 0.15, show.legend = FALSE) +
-        geom_point(size = 2, alpha = 0.55) +
-        geom_point(data = wgs_centroids, aes(x = PC1, y = PC2, colour = pop), inherit.aes = FALSE, shape = 4, size = 4.5, stroke = 1.2, show.legend = FALSE) +
-        geom_text(data = wgs_centroids, aes(x = PC1, y = PC2, label = pop, colour = pop), inherit.aes = FALSE, nudge_y = 0.02, fontface = "bold", show.legend = FALSE) +
-        scale_colour_manual(values = population_colours, drop = FALSE) +
-        labs(
-                title = "WGS PCA with population centroids",
-                x = paste0("PC1 (", wgs_explained_variance$explained_variance_percent[1], "%)"),
-                y = paste0("PC2 (", wgs_explained_variance$explained_variance_percent[2], "%)"),
-                colour = "Population",
-                shape = "Elevation"
-        )
-
-ggsave(file.path(output_dir, "wgs_pca_population_centroids.png"), wgs_pca_centroid_plot, width = 6.5, height = 5, dpi = 320)
-wgs_pca_centroid_plot
 ```
 
 ## Compare the PCA panels
 
-Place the ddRAD and WGS PCA plots side by side so students can compare the two marker systems directly.
+Place the ddRAD and WGS PCA panels side by side so students can compare whether the two marker systems recover similar clustering patterns across multiple axis pairs.
 
 ```{r pca-panels, fig.width=11, fig.height=5.5}
 pca_overview <- cowplot::plot_grid(ddrad_pca_plot, wgs_pca_plot, ncol = 2, labels = c("A", "B"))
-pca_centroids <- cowplot::plot_grid(ddrad_pca_centroid_plot, wgs_pca_centroid_plot, ncol = 2, labels = c("A", "B"))
 
 ggsave(file.path(output_dir, "pca_overview.png"), pca_overview, width = 11, height = 5.5, dpi = 320)
-ggsave(file.path(output_dir, "pca_population_centroids.png"), pca_centroids, width = 11, height = 5.5, dpi = 320)
 
 pca_overview
 ```

@@ -233,7 +233,7 @@ dir.create("/home/rstudio/work/outputs/01-structure-ddrad/small_structure_exampl
 
 Run a short example with a few values of `K` and a few replicates:
 
-```{r, eval=FALSE, echo=FALSE}
+```{r, eval=FALSE, message=FALSE}
 small_run_dir <- "/home/rstudio/work/outputs/01-structure-ddrad/small_structure_example"
 
 setwd(small_run_dir)
@@ -304,7 +304,7 @@ list.files()
 
 Still in the RStudio console, run:
 
-```{r, eval=FALSE, echo=FALSE}
+```{r, eval=FALSE, message=FALSE}
 dir.create("/home/rstudio/work/outputs/01-structure-ddrad", recursive = TRUE, showWarnings = FALSE)
 system(
 	paste(
@@ -349,7 +349,7 @@ The CLUMPP paramfile provided with the practical is in:
 
 Copy the `paramfile` into the current folder. It specifies the parameters for CLUMPP, such as the number of clusters (K), the number of replicates, the number of individuals, and the input and output file names. Most of these parameters will be overridden by the command-line arguments when you run CLUMPP, but the `paramfile` serves as a template for how to structure your CLUMPP runs.
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, message=FALSE}
 clumpp_dir <- "/home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis"
 
 file.copy(
@@ -361,7 +361,7 @@ file.copy(
 
 One typical way to run CLUMPP is to loop across values of `K`:
 
-```{r, eval=FALSE, echo=FALSE}
+```{r, eval=FALSE, message=FALSE}
 REPS <- 10
 INDS <- 64
 clumpp_dir <- "/home/rstudio/work/outputs/01-structure-ddrad/structureHarvester_analysis"

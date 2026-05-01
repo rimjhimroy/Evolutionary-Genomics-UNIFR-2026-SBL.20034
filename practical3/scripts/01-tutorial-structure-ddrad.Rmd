@@ -9,7 +9,7 @@ output: html_document
 This first chunk only sets global notebook options. 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
 knitr::opts_knit$set(root.dir = "/home/rstudio/work")
 ```
 
@@ -25,23 +25,12 @@ library(reshape2)
 library(rworldmap)
 ```
 
-## Confirm the knitr working directory
-
-Check that this notebook is running from the Renku root directory set in the setup chunk.
-
-```{r working-directory}
-practical_root <- "/home/rstudio/work"
-getwd()
-```
-
 ## Set output and input paths
 
 Define where results will be written and which precomputed files will be used in this part of the practical.
 
 ```{r options}
 output_dir <- "/home/rstudio/work/outputs/01-structure-ddrad"
-dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-
 evanno_file <- file.path(output_dir, "structureHarvester_analysis", "evanno.txt")
 sample_metadata_file <- "/home/rstudio/work/dataset-tutorial3/01-structure-ddrad/04-sample-metadata/samples_xy.txt"
 ```
@@ -139,7 +128,7 @@ head(samples_xy)
 Now read the aligned CLUMPP membership file that matches your chosen `K`. This creates one ancestry coefficient column per inferred cluster.
 
 ```{r read-membership-table}
-membership_file <- file.path(output_dir, "clumpp", paste0("clumpp_output_", best_k, ".txt"))
+membership_file <- file.path(output_dir,  "structureHarvester_analysis", paste0("clumpp_output_", best_k, ".txt"))
 
 membership_raw <- read.table(membership_file, header = FALSE, stringsAsFactors = FALSE)
 cluster_columns <- paste0("cluster_", seq_len(best_k))
@@ -223,34 +212,41 @@ population_means
 
 This chunk places each population on the Switzerland map and adds a pie chart showing the mean ancestry proportions at that location.
 
-```{r population-map}
-map_x_limits <- c(min(population_means$X) - 2, max(population_means$X) + 2)
-map_y_limits <- c(min(population_means$Y) - 2, max(population_means$Y) + 2)
+```{r population-map, message=FALSE}
+map_x_limits <- c(min(population_means$X) - 1, max(population_means$X) + 1)
+map_y_limits <- c(min(population_means$Y) - 1, max(population_means$Y) + 1)
+
+draw_population_map <- function() {
+        plot(
+                rworldmap::getMap(resolution = "low"),
+                xlim = map_x_limits,
+                ylim = map_y_limits,
+                asp = 1,
+                col = "white",
+                border = "grey65",
+                bg = "aliceblue"
+        )
+        rworldmap::mapPies(
+                as.data.frame(population_means),
+                nameX = "X",
+                nameY = "Y",
+                symbolSize = 1.6,
+                nameZs = cluster_columns,
+                zColours = cluster_colours,
+                xlim = map_x_limits,
+                ylim = map_y_limits,
+                oceanCol = "aliceblue",
+                landCol = "white",
+                addCatLegend = FALSE,
+                add = TRUE
+        )
+        text(population_means$X, population_means$Y + 0.35, labels = population_means$pop, cex = 0.85, font = 2)
+        title(main = paste("Population coordinates and mean admixture proportions for K =", best_k))
+}
+
+draw_population_map()
 
 png(file.path(output_dir, "population_sampling_map.png"), width = 8, height = 5, units = "in", res = 320)
-plot(
-        rworldmap::getMap(resolution = "low"),
-        xlim = map_x_limits,
-        ylim = map_y_limits,
-        asp = 1,
-        col = "white",
-        border = "grey65",
-        bg = "aliceblue"
-)
-rworldmap::mapPies(
-        population_means,
-        nameX = "X",
-        nameY = "Y",
-        symbolSize = 1,
-        nameZs = cluster_columns,
-        zColours = cluster_colours,
-        xlim = map_x_limits,
-        ylim = map_y_limits,
-        oceanCol = "aliceblue",
-        landCol = "white",
-        addCatLegend = FALSE
-)
-text(population_means$X, population_means$Y + 0.35, labels = population_means$pop, cex = 0.85, font = 2)
-title(main = paste("Population coordinates and mean admixture proportions for K =", best_k))
+draw_population_map()
 dev.off()
 ```
