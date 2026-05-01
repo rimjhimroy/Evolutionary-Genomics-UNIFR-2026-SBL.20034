@@ -3,507 +3,311 @@ title: "Practical 3 Part 3: scaffold 1 window scan"
 output: html_document
 ---
 
-## Hide setup details
+## Aim
 
-This first chunk only sets global notebook options. 
+In this notebook we do one simple task twice: calculate window-based $F_{ST}$ along scaffold 1 and compare the pattern between the WGS and ddRAD datasets.
+
+Interpretation guide:
+
+- Higher $F_{ST}$ means stronger genetic differentiation between the two populations in that window.
+- Peaks can indicate regions where the populations differ more strongly than the scaffold background.
+- ddRAD and WGS will not match perfectly because ddRAD samples only a subset of sites, but broad peaks can still be compared.
+
+## Setup
+
+This chunk sets the working directory for the practical and turns off code display.
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
 knitr::opts_knit$set(root.dir = "/home/rstudio/work")
 ```
 
 ## Load packages
 
-Load the R packages used for window-based statistics, reshaping tables, and plotting.
+We only need three packages: one for population-genetic calculations, one for plotting, and one for reading VCF files.
 
 ```{r libraries}
-library(cowplot)
-library(dplyr)
-library(ggplot2)
-library(PopGenome)
-library(tidyr)
-library(vcfR)
+library("PopGenome")
+library("ggplot2")
+library("vcfR")
 ```
 
-## Confirm the knitr working directory
+## Choose input files and window settings
 
-Check that this notebook is running from the Renku root directory set in the setup chunk.
+We will scan scaffold 1 in 10 kb windows with a 1 kb step.
 
-```{r working-directory}
-practical_root <- "/home/rstudio/work"
-getwd()
-```
+```{r inputs}
+wgs_vcf_file <- "/home/rstudio/work/dataset-practical3/03-scaffold1-window-scan/wgs_vcf/scaffold1/A2_wgs_scaffold1.vcf"
+wgs_vcf_dir <- "/home/rstudio/work/dataset-practical3/03-scaffold1-window-scan/wgs_vcf/scaffold1"
 
-## Set plot theme and window size
-
-Define the shared plotting style, the output folder, and the sliding-window size used in this scaffold scan.
-
-```{r options}
-theme_set(
-        theme_minimal(base_size = 11) +
-                theme(
-                        plot.title.position = "plot",
-                        panel.grid.minor = element_blank(),
-                        legend.position = "bottom"
-                )
-)
-
-output_dir <- "/home/rstudio/work/outputs/03-scaffold1-window-scan"
-dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+ddrad_vcf_file <- "/home/rstudio/work/dataset-practical3/03-scaffold1-window-scan/ddRAD_vcf/scaffold_1/A2_ddRAD_scaffold_1.vcf"
+ddrad_vcf_dir <- "/home/rstudio/work/dataset-practical3/03-scaffold1-window-scan/ddRAD_vcf/scaffold_1"
 
 window_width <- 10000
 window_jump <- 1000
 ```
 
-## Read the WGS scaffold data
+## ddRAD step 1: read the VCF and identify samples
 
-Load the WGS VCF, identify the two focal populations, and create the PopGenome window object.
+We start with ddRAD by reading the VCF and grouping individuals into A2G and A2S.
 
-```{r wgs-inputs}
-wgs_vcf <- read.vcfR(
-        "/home/rstudio/work/dataset-practical3/03-scaffold1-window-scan/wgs_vcf/scaffold1/A2_wgs_scaffold1.vcf",
-        verbose = FALSE
+```{r ddrad-read-vcf}
+ddrad_vcf <- read.vcfR(ddrad_vcf_file, verbose = FALSE)
+ddrad_genlight <- vcfR2genlight(ddrad_vcf)
+ddrad_genlight$ind.names
+
+A2G_ddrad <- grep("A2G", ddrad_genlight$ind.names, value = TRUE)
+A2S_ddrad <- grep("A2S", ddrad_genlight$ind.names, value = TRUE)
+
+populations_ddrad <- list(A2G_ddrad, A2S_ddrad)
+populations_ddrad
+```
+
+## ddRAD step 2: create the PopGenome object
+
+Read the ddRAD directory and assign the two populations.
+
+```{r ddrad-genome-object}
+ddrad_genome <- readData(ddrad_vcf_dir, format = "VCF", include.unknown = TRUE)
+ddrad_genome <- set.populations(ddrad_genome, populations_ddrad)
+
+ddrad_genome
+```
+
+## ddRAD step 3: create sliding windows
+
+Use the same window size and jump so the ddRAD scan can be compared directly to the WGS scan.
+
+```{r ddrad-windows}
+ddrad_genome_slide <- sliding.window.transform(
+  ddrad_genome,
+  width = window_width,
+  jump = window_jump,
+  type = 2
 )
-wgs_names <- vcfR2genlight(wgs_vcf)$ind.names
-wgs_populations <- list(
-        A2G = grep("A2G", wgs_names, value = TRUE, fixed = TRUE),
-        A2S = grep("A2S", wgs_names, value = TRUE, fixed = TRUE)
-)
+ddrad_genome_slide <- set.populations(ddrad_genome_slide, populations_ddrad, diploid = TRUE)
 
-wgs_data <- readData("/home/rstudio/work/dataset-practical3/03-scaffold1-window-scan/wgs_vcf/scaffold1", format = "VCF", include.unknown = TRUE)
-wgs_windows <- sliding.window.transform(wgs_data, width = window_width, jump = window_jump, type = 2)
-wgs_windows <- set.populations(wgs_windows, wgs_populations, diploid = TRUE)
+length(ddrad_genome_slide@region.names)
+head(ddrad_genome_slide@region.names)
 ```
 
-## Calculate WGS Fst by window
+## ddRAD step 4: calculate Fst for each window
 
-Compute one Fst value per genomic window and extract the start and end coordinates for each window.
-
-```{r wgs-fst-table}
-wgs_windows <- F_ST.stats(wgs_windows, mode = "nucleotide")
-wgs_fst <- as.data.frame(get.F_ST(wgs_windows, mode = FALSE, pairwise = TRUE)[1])
-names(wgs_fst) <- "fst"
-wgs_fst$fst[wgs_fst$fst < 0] <- 0
-
-wgs_positions <- data.frame(
-        start_pos = as.numeric(sub(" -.*", "", wgs_windows@region.names)),
-        end_pos = as.numeric(sub(" :", "", sub(".*- ", "", wgs_windows@region.names)))
-)
-
-wgs_fst <- cbind(wgs_positions, wgs_fst)
-wgs_fst$midpoint_mb <- (wgs_fst$start_pos + wgs_fst$end_pos) / 2e6
-
-head(wgs_fst)
-```
-
-## Calculate WGS diversity statistics
-
-Add nucleotide diversity, Dxy, and Tajima's D so the scaffold scan includes more than just Fst.
-
-```{r wgs-diversity-table}
-wgs_windows <- diversity.stats(wgs_windows, pi = TRUE)
-wgs_windows <- diversity.stats.between(wgs_windows)
-wgs_windows <- suppressWarnings(neutrality.stats(wgs_windows, FAST = TRUE))
-
-wgs_pi <- as.data.frame(wgs_windows@Pi)
-names(wgs_pi) <- c("pi_A2G", "pi_A2S")
-
-wgs_dxy <- as.data.frame(wgs_windows@nuc.diversity.between)
-names(wgs_dxy) <- "dxy_A2G_A2S"
-
-wgs_tajima <- as.data.frame(wgs_windows@Tajima.D)
-names(wgs_tajima) <- c("tajima_A2G", "tajima_A2S")
-
-wgs_stats <- cbind(wgs_fst, wgs_pi, wgs_dxy, wgs_tajima)
-write.table(wgs_stats, file = file.path(output_dir, "wgs_scaffold1_window_stats.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
-
-head(wgs_stats)
-```
-
-## Pick highlighted WGS windows
-
-Select the strongest WGS peaks so they can be emphasized in the plots.
-
-```{r wgs-highlight-windows}
-wgs_highlight_windows <- wgs_stats[order(-wgs_stats$fst, wgs_stats$midpoint_mb), ]
-wgs_highlight_windows <- head(wgs_highlight_windows, 3)
-wgs_highlight_windows$start_mb <- wgs_highlight_windows$start_pos / 1e6
-wgs_highlight_windows$end_mb <- wgs_highlight_windows$end_pos / 1e6
-wgs_highlight_windows$label_y <- wgs_highlight_windows$fst + seq(0.03, by = 0.03, length.out = nrow(wgs_highlight_windows))
-wgs_highlight_windows$label <- paste0("Peak ", seq_len(nrow(wgs_highlight_windows)), "\n", sprintf("%.2f-%.2f Mb", wgs_highlight_windows$start_mb, wgs_highlight_windows$end_mb))
-
-wgs_highlight_windows
-```
-
-## Reshape WGS tables for plotting
-
-Convert the WGS pi and Tajima's D tables to long format so each population can be plotted separately.
-
-```{r wgs-long-tables}
-wgs_pi_long <- wgs_stats |>
-        dplyr::select(midpoint_mb, pi_A2G, pi_A2S) |>
-        dplyr::rename(A2G = pi_A2G, A2S = pi_A2S) |>
-        tidyr::pivot_longer(cols = -midpoint_mb, names_to = "series", values_to = "value") |>
-        dplyr::filter(is.finite(value))
-
-wgs_tajima_long <- wgs_stats |>
-        dplyr::select(midpoint_mb, tajima_A2G, tajima_A2S) |>
-        dplyr::rename(A2G = tajima_A2G, A2S = tajima_A2S) |>
-        tidyr::pivot_longer(cols = -midpoint_mb, names_to = "series", values_to = "value") |>
-        dplyr::filter(is.finite(value))
-
-wgs_pi_long$series <- factor(wgs_pi_long$series, levels = c("A2G", "A2S"))
-wgs_tajima_long$series <- factor(wgs_tajima_long$series, levels = c("A2G", "A2S"))
-```
-
-## Plot WGS Fst
-
-This plot shows how differentiation changes across scaffold 1 in the WGS dataset.
-
-```{r wgs-fst-plot, fig.width=9, fig.height=4}
-wgs_fst_plot <- ggplot(wgs_stats, aes(x = midpoint_mb, y = fst)) +
-        geom_rect(
-                data = wgs_highlight_windows,
-                aes(xmin = start_mb, xmax = end_mb, ymin = -Inf, ymax = Inf),
-                inherit.aes = FALSE,
-                fill = "#4C78A8",
-                alpha = 0.08
-        ) +
-        geom_point(size = 0.8, alpha = 0.45, colour = "#7A3E00") +
-        geom_smooth(method = "loess", se = FALSE, span = 0.18, linewidth = 0.55, colour = "#7A3E00") +
-        geom_point(
-                data = wgs_highlight_windows,
-                aes(x = midpoint_mb, y = fst),
-                inherit.aes = FALSE,
-                shape = 21,
-                size = 2.2,
-                fill = "white",
-                colour = "#7A3E00",
-                stroke = 0.55
-        ) +
-        geom_label(
-                data = wgs_highlight_windows,
-                aes(x = midpoint_mb, y = label_y, label = label),
-                inherit.aes = FALSE,
-                size = 2.5,
-                label.size = 0.15,
-                fill = "white"
-        ) +
-        labs(title = "WGS scaffold 1 differentiation", x = "Scaffold 1 position (Mb)", y = "Fst")
-
-ggsave(file.path(output_dir, "wgs_scaffold1_fst.png"), wgs_fst_plot, width = 9, height = 4, dpi = 320)
-wgs_fst_plot
-```
-
-## Plot WGS nucleotide diversity
-
-These panels show within-population nucleotide diversity across the scaffold for A2G and A2S.
-
-```{r wgs-pi-plot, fig.width=9, fig.height=5}
-wgs_pi_plot <- ggplot(wgs_pi_long, aes(x = midpoint_mb, y = value, colour = series)) +
-        geom_rect(
-                data = wgs_highlight_windows,
-                aes(xmin = start_mb, xmax = end_mb, ymin = -Inf, ymax = Inf),
-                inherit.aes = FALSE,
-                fill = "#4C78A8",
-                alpha = 0.08
-        ) +
-        geom_point(size = 0.75, alpha = 0.35) +
-        geom_smooth(method = "loess", se = FALSE, span = 0.2, linewidth = 0.55) +
-        facet_wrap(~series, ncol = 1, scales = "free_y") +
-        scale_colour_manual(values = c(A2G = "#1B9E77", A2S = "#D95F02")) +
-        labs(title = "WGS nucleotide diversity", x = "Scaffold 1 position (Mb)", y = expression(pi), colour = NULL) +
-        theme(legend.position = "none")
-
-ggsave(file.path(output_dir, "wgs_scaffold1_pi.png"), wgs_pi_plot, width = 9, height = 5, dpi = 320)
-wgs_pi_plot
-```
-
-## Plot WGS Dxy
-
-This plot shows absolute divergence between A2G and A2S across scaffold 1 in the WGS dataset.
-
-```{r wgs-dxy-plot, fig.width=9, fig.height=4}
-wgs_dxy_plot <- ggplot(wgs_stats, aes(x = midpoint_mb, y = dxy_A2G_A2S)) +
-        geom_rect(
-                data = wgs_highlight_windows,
-                aes(xmin = start_mb, xmax = end_mb, ymin = -Inf, ymax = Inf),
-                inherit.aes = FALSE,
-                fill = "#4C78A8",
-                alpha = 0.08
-        ) +
-        geom_point(size = 0.8, alpha = 0.45, colour = "#B22222") +
-        geom_smooth(method = "loess", se = FALSE, span = 0.18, linewidth = 0.55, colour = "#B22222") +
-        labs(title = "WGS divergence", x = "Scaffold 1 position (Mb)", y = "Dxy")
-
-ggsave(file.path(output_dir, "wgs_scaffold1_dxy.png"), wgs_dxy_plot, width = 9, height = 4, dpi = 320)
-wgs_dxy_plot
-```
-
-## Plot WGS Tajima's D
-
-These panels show Tajima's D across the scaffold for the two focal populations.
-
-```{r wgs-tajima-plot, fig.width=9, fig.height=5}
-wgs_tajima_plot <- ggplot(wgs_tajima_long, aes(x = midpoint_mb, y = value, colour = series)) +
-        geom_rect(
-                data = wgs_highlight_windows,
-                aes(xmin = start_mb, xmax = end_mb, ymin = -Inf, ymax = Inf),
-                inherit.aes = FALSE,
-                fill = "#4C78A8",
-                alpha = 0.08
-        ) +
-        geom_hline(yintercept = 0, linewidth = 0.35, colour = "grey55") +
-        geom_point(size = 0.75, alpha = 0.35) +
-        geom_smooth(method = "loess", se = FALSE, span = 0.2, linewidth = 0.55) +
-        facet_wrap(~series, ncol = 1, scales = "free_y") +
-        scale_colour_manual(values = c(A2G = "#1B9E77", A2S = "#D95F02")) +
-        labs(title = "WGS Tajima's D", x = "Scaffold 1 position (Mb)", y = "Tajima's D", colour = NULL) +
-        theme(legend.position = "none")
-
-ggsave(file.path(output_dir, "wgs_scaffold1_tajima.png"), wgs_tajima_plot, width = 9, height = 5, dpi = 320)
-wgs_tajima_plot
-```
-
-## Combine the WGS panels
-
-Place the four WGS plots into one vertical summary panel for teaching and comparison.
-
-```{r wgs-summary-plot, fig.width=10, fig.height=14}
-wgs_summary_plot <- cowplot::plot_grid(wgs_fst_plot, wgs_pi_plot, wgs_dxy_plot, wgs_tajima_plot, ncol = 1, align = "v")
-
-ggsave(file.path(output_dir, "wgs_scaffold1_summary.png"), wgs_summary_plot, width = 10, height = 14, dpi = 320)
-wgs_summary_plot
-```
-
-## Read the ddRAD scaffold data
-
-Load the ddRAD VCF, identify the two focal populations, and create the PopGenome window object.
-
-```{r ddrad-inputs}
-ddrad_vcf <- read.vcfR(
-        "/home/rstudio/work/dataset-practical3/03-scaffold1-window-scan/ddRAD_vcf/scaffold_1/A2_ddRAD_scaffold_1.vcf",
-        verbose = FALSE
-)
-ddrad_names <- vcfR2genlight(ddrad_vcf)$ind.names
-ddrad_populations <- list(
-        A2G = grep("A2G", ddrad_names, value = TRUE, fixed = TRUE),
-        A2S = grep("A2S", ddrad_names, value = TRUE, fixed = TRUE)
-)
-
-ddrad_data <- readData("/home/rstudio/work/dataset-practical3/03-scaffold1-window-scan/ddRAD_vcf/scaffold_1", format = "VCF", include.unknown = TRUE)
-ddrad_windows <- sliding.window.transform(ddrad_data, width = window_width, jump = window_jump, type = 2)
-ddrad_windows <- set.populations(ddrad_windows, ddrad_populations, diploid = TRUE)
-```
-
-## Calculate ddRAD Fst by window
-
-Compute one Fst value per genomic window and extract the start and end coordinates for each ddRAD window.
+Again, we calculate one $F_{ST}$ value per window and set negative values to 0.
 
 ```{r ddrad-fst-table}
-ddrad_windows <- F_ST.stats(ddrad_windows, mode = "nucleotide")
-ddrad_fst <- as.data.frame(get.F_ST(ddrad_windows, mode = FALSE, pairwise = TRUE)[1])
+ddrad_genome_slide <- F_ST.stats(ddrad_genome_slide, mode = "nucleotide")
+ddrad_fst <- as.data.frame(get.F_ST(ddrad_genome_slide, mode = FALSE, pairwise = TRUE)[1])
 names(ddrad_fst) <- "fst"
+
 ddrad_fst$fst[ddrad_fst$fst < 0] <- 0
 
-ddrad_positions <- data.frame(
-        start_pos = as.numeric(sub(" -.*", "", ddrad_windows@region.names)),
-        end_pos = as.numeric(sub(" :", "", sub(".*- ", "", ddrad_windows@region.names)))
-)
-
-ddrad_fst <- cbind(ddrad_positions, ddrad_fst)
+ddrad_fst$start_pos <- as.numeric(sub(" -.*", "", ddrad_genome_slide@region.names))
+ddrad_fst$end_pos <- as.numeric(sub(" :", "", sub(".*- ", "", ddrad_genome_slide@region.names)))
 ddrad_fst$midpoint_mb <- (ddrad_fst$start_pos + ddrad_fst$end_pos) / 2e6
+ddrad_fst$dataset <- "ddRAD"
 
+ddrad_fst <- ddrad_fst[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "fst")]
 head(ddrad_fst)
 ```
 
-## Calculate ddRAD diversity statistics
+## Plot the ddRAD scan
 
-Add nucleotide diversity, Dxy, and Tajima's D so the ddRAD scaffold scan can be compared directly to the WGS scan.
+This plot is interpreted in the same way as the WGS scan, but ddRAD often looks noisier because fewer markers are available.
 
-```{r ddrad-diversity-table}
-ddrad_windows <- diversity.stats(ddrad_windows, pi = TRUE)
-ddrad_windows <- diversity.stats.between(ddrad_windows)
-ddrad_windows <- suppressWarnings(neutrality.stats(ddrad_windows, FAST = TRUE))
+```{r ddrad-plot, fig.width=9, fig.height=4}
+ddrad_plot <- ggplot(ddrad_fst, aes(x = midpoint_mb, y = fst)) +
+  geom_point(color = "#01665e", alpha = 0.55, size = 1.2) +
+  geom_smooth(method = "loess", se = FALSE, span = 0.15, color = "#35978f", linewidth = 1) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(
+    title = "ddRAD: scaffold 1 window-based Fst",
+    x = "Scaffold 1 position (Mb)",
+    y = "Fst between A2G and A2S"
+  ) +
+  theme_classic(base_size = 12)
 
-ddrad_pi <- as.data.frame(ddrad_windows@Pi)
-names(ddrad_pi) <- c("pi_A2G", "pi_A2S")
-
-ddrad_dxy <- as.data.frame(ddrad_windows@nuc.diversity.between)
-names(ddrad_dxy) <- "dxy_A2G_A2S"
-
-ddrad_tajima <- as.data.frame(ddrad_windows@Tajima.D)
-names(ddrad_tajima) <- c("tajima_A2G", "tajima_A2S")
-
-ddrad_stats <- cbind(ddrad_fst, ddrad_pi, ddrad_dxy, ddrad_tajima)
-write.table(ddrad_stats, file = file.path(output_dir, "ddrad_scaffold1_window_stats.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
-
-head(ddrad_stats)
+ddrad_plot
 ```
 
-## Pick highlighted ddRAD windows
+ddRAD interpretation:
 
-Select the strongest ddRAD peaks so they can be emphasized in the plots.
+- Expect more irregular point-to-point variation than in WGS.
+- If a major peak appears in both datasets, that region is a stronger candidate for real differentiation.
+- If a peak appears only in ddRAD, check whether sparse marker coverage could explain it.
 
-```{r ddrad-highlight-windows}
-ddrad_highlight_windows <- ddrad_stats[order(-ddrad_stats$fst, ddrad_stats$midpoint_mb), ]
-ddrad_highlight_windows <- head(ddrad_highlight_windows, 3)
-ddrad_highlight_windows$start_mb <- ddrad_highlight_windows$start_pos / 1e6
-ddrad_highlight_windows$end_mb <- ddrad_highlight_windows$end_pos / 1e6
-ddrad_highlight_windows$label_y <- ddrad_highlight_windows$fst + seq(0.03, by = 0.03, length.out = nrow(ddrad_highlight_windows))
-ddrad_highlight_windows$label <- paste0("Peak ", seq_len(nrow(ddrad_highlight_windows)), "\n", sprintf("%.2f-%.2f Mb", ddrad_highlight_windows$start_mb, ddrad_highlight_windows$end_mb))
+## WGS step 1: read the VCF and identify samples
 
-ddrad_highlight_windows
+Now do the same step-by-step workflow for the WGS dataset.
+
+```{r wgs-read-vcf}
+wgs_vcf <- read.vcfR(wgs_vcf_file, verbose = FALSE)
+wgs_genlight <- vcfR2genlight(wgs_vcf)
+wgs_genlight$ind.names
+
+A2G_wgs <- grep("A2G", wgs_genlight$ind.names, value = TRUE)
+A2S_wgs <- grep("A2S", wgs_genlight$ind.names, value = TRUE)
+
+populations_wgs <- list(A2G_wgs, A2S_wgs)
+populations_wgs
 ```
 
-## Reshape ddRAD tables for plotting
+## WGS step 2: create the PopGenome object
 
-Convert the ddRAD pi and Tajima's D tables to long format so each population can be plotted separately.
+Read the WGS VCF directory into a PopGenome object and assign the two populations.
 
-```{r ddrad-long-tables}
-ddrad_pi_long <- ddrad_stats |>
-        dplyr::select(midpoint_mb, pi_A2G, pi_A2S) |>
-        dplyr::rename(A2G = pi_A2G, A2S = pi_A2S) |>
-        tidyr::pivot_longer(cols = -midpoint_mb, names_to = "series", values_to = "value") |>
-        dplyr::filter(is.finite(value))
+```{r wgs-genome-object}
+wgs_genome <- readData(wgs_vcf_dir, format = "VCF", include.unknown = TRUE)
+wgs_genome <- set.populations(wgs_genome, populations_wgs)
 
-ddrad_tajima_long <- ddrad_stats |>
-        dplyr::select(midpoint_mb, tajima_A2G, tajima_A2S) |>
-        dplyr::rename(A2G = tajima_A2G, A2S = tajima_A2S) |>
-        tidyr::pivot_longer(cols = -midpoint_mb, names_to = "series", values_to = "value") |>
-        dplyr::filter(is.finite(value))
-
-ddrad_pi_long$series <- factor(ddrad_pi_long$series, levels = c("A2G", "A2S"))
-ddrad_tajima_long$series <- factor(ddrad_tajima_long$series, levels = c("A2G", "A2S"))
+wgs_genome
 ```
 
-## Plot ddRAD Fst
+## WGS step 3: create sliding windows
 
-This plot shows how differentiation changes across scaffold 1 in the ddRAD dataset.
+Here we split scaffold 1 into overlapping windows of 10 kb, moving by 1 kb each time.
 
-```{r ddrad-fst-plot, fig.width=9, fig.height=4}
-ddrad_fst_plot <- ggplot(ddrad_stats, aes(x = midpoint_mb, y = fst)) +
-        geom_rect(
-                data = ddrad_highlight_windows,
-                aes(xmin = start_mb, xmax = end_mb, ymin = -Inf, ymax = Inf),
-                inherit.aes = FALSE,
-                fill = "#F4A261",
-                alpha = 0.1
-        ) +
-        geom_point(size = 0.8, alpha = 0.45, colour = "#7A3E00") +
-        geom_smooth(method = "loess", se = FALSE, span = 0.18, linewidth = 0.55, colour = "#7A3E00") +
-        geom_point(
-                data = ddrad_highlight_windows,
-                aes(x = midpoint_mb, y = fst),
-                inherit.aes = FALSE,
-                shape = 21,
-                size = 2.2,
-                fill = "white",
-                colour = "#7A3E00",
-                stroke = 0.55
-        ) +
-        geom_label(
-                data = ddrad_highlight_windows,
-                aes(x = midpoint_mb, y = label_y, label = label),
-                inherit.aes = FALSE,
-                size = 2.5,
-                label.size = 0.15,
-                fill = "white"
-        ) +
-        labs(title = "ddRAD scaffold 1 differentiation", x = "Scaffold 1 position (Mb)", y = "Fst")
+```{r wgs-windows}
+wgs_genome_slide <- sliding.window.transform(
+  wgs_genome,
+  width = window_width,
+  jump = window_jump,
+  type = 2
+)
+wgs_genome_slide <- set.populations(wgs_genome_slide, populations_wgs, diploid = TRUE)
 
-ggsave(file.path(output_dir, "ddrad_scaffold1_fst.png"), ddrad_fst_plot, width = 9, height = 4, dpi = 320)
-ddrad_fst_plot
+length(wgs_genome_slide@region.names)
+head(wgs_genome_slide@region.names)
 ```
 
-## Plot ddRAD nucleotide diversity
+## WGS step 4: calculate Fst for each window
 
-These panels show within-population nucleotide diversity across the scaffold for A2G and A2S in the ddRAD dataset.
+This gives one $F_{ST}$ value per window. Negative values are set to 0 because they are usually treated as no differentiation.
 
-```{r ddrad-pi-plot, fig.width=9, fig.height=5}
-ddrad_pi_plot <- ggplot(ddrad_pi_long, aes(x = midpoint_mb, y = value, colour = series)) +
-        geom_rect(
-                data = ddrad_highlight_windows,
-                aes(xmin = start_mb, xmax = end_mb, ymin = -Inf, ymax = Inf),
-                inherit.aes = FALSE,
-                fill = "#F4A261",
-                alpha = 0.1
-        ) +
-        geom_point(size = 0.75, alpha = 0.35) +
-        geom_smooth(method = "loess", se = FALSE, span = 0.2, linewidth = 0.55) +
-        facet_wrap(~series, ncol = 1, scales = "free_y") +
-        scale_colour_manual(values = c(A2G = "#1B9E77", A2S = "#D95F02")) +
-        labs(title = "ddRAD nucleotide diversity", x = "Scaffold 1 position (Mb)", y = expression(pi), colour = NULL) +
-        theme(legend.position = "none")
+```{r wgs-fst-table}
+wgs_genome_slide <- F_ST.stats(wgs_genome_slide, mode = "nucleotide")
+wgs_fst <- as.data.frame(get.F_ST(wgs_genome_slide, mode = FALSE, pairwise = TRUE)[1])
+names(wgs_fst) <- "fst"
 
-ggsave(file.path(output_dir, "ddrad_scaffold1_pi.png"), ddrad_pi_plot, width = 9, height = 5, dpi = 320)
-ddrad_pi_plot
+wgs_fst$fst[wgs_fst$fst < 0] <- 0
+
+wgs_fst$start_pos <- as.numeric(sub(" -.*", "", wgs_genome_slide@region.names))
+wgs_fst$end_pos <- as.numeric(sub(" :", "", sub(".*- ", "", wgs_genome_slide@region.names)))
+wgs_fst$midpoint_mb <- (wgs_fst$start_pos + wgs_fst$end_pos) / 2e6
+wgs_fst$dataset <- "WGS"
+
+wgs_fst <- wgs_fst[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "fst")]
+head(wgs_fst)
 ```
 
-## Plot ddRAD Dxy
+## Plot the WGS scan
 
-This plot shows absolute divergence between A2G and A2S across scaffold 1 in the ddRAD dataset.
+The points show individual windows and the smooth line shows the broad trend across the scaffold.
 
-```{r ddrad-dxy-plot, fig.width=9, fig.height=4}
-ddrad_dxy_plot <- ggplot(ddrad_stats, aes(x = midpoint_mb, y = dxy_A2G_A2S)) +
-        geom_rect(
-                data = ddrad_highlight_windows,
-                aes(xmin = start_mb, xmax = end_mb, ymin = -Inf, ymax = Inf),
-                inherit.aes = FALSE,
-                fill = "#F4A261",
-                alpha = 0.1
-        ) +
-        geom_point(size = 0.8, alpha = 0.45, colour = "#B22222") +
-        geom_smooth(method = "loess", se = FALSE, span = 0.18, linewidth = 0.55, colour = "#B22222") +
-        labs(title = "ddRAD divergence", x = "Scaffold 1 position (Mb)", y = "Dxy")
+```{r wgs-plot, fig.width=9, fig.height=4}
+wgs_plot <- ggplot(wgs_fst, aes(x = midpoint_mb, y = fst)) +
+  geom_point(color = "#8c510a", alpha = 0.55, size = 1.2) +
+  geom_smooth(method = "loess", se = FALSE, span = 0.15, color = "#bf812d", linewidth = 1) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(
+    title = "WGS: scaffold 1 window-based Fst",
+    x = "Scaffold 1 position (Mb)",
+    y = "Fst between A2G and A2S"
+  ) +
+  theme_classic(base_size = 12)
 
-ggsave(file.path(output_dir, "ddrad_scaffold1_dxy.png"), ddrad_dxy_plot, width = 9, height = 4, dpi = 320)
-ddrad_dxy_plot
+wgs_plot
 ```
 
-## Plot ddRAD Tajima's D
+WGS interpretation:
 
-These panels show Tajima's D across the scaffold for the two focal populations in the ddRAD dataset.
+- Look for clusters of high windows rather than a single isolated point.
+- Regions close to $F_{ST} = 0$ show little differentiation between A2G and A2S.
 
-```{r ddrad-tajima-plot, fig.width=9, fig.height=5}
-ddrad_tajima_plot <- ggplot(ddrad_tajima_long, aes(x = midpoint_mb, y = value, colour = series)) +
-        geom_rect(
-                data = ddrad_highlight_windows,
-                aes(xmin = start_mb, xmax = end_mb, ymin = -Inf, ymax = Inf),
-                inherit.aes = FALSE,
-                fill = "#F4A261",
-                alpha = 0.1
-        ) +
-        geom_hline(yintercept = 0, linewidth = 0.35, colour = "grey55") +
-        geom_point(size = 0.75, alpha = 0.35) +
-        geom_smooth(method = "loess", se = FALSE, span = 0.2, linewidth = 0.55) +
-        facet_wrap(~series, ncol = 1, scales = "free_y") +
-        scale_colour_manual(values = c(A2G = "#1B9E77", A2S = "#D95F02")) +
-        labs(title = "ddRAD Tajima's D", x = "Scaffold 1 position (Mb)", y = "Tajima's D", colour = NULL) +
-        theme(legend.position = "none")
+## What else can PopGenome calculate?
 
-ggsave(file.path(output_dir, "ddrad_scaffold1_tajima.png"), ddrad_tajima_plot, width = 9, height = 5, dpi = 320)
-ddrad_tajima_plot
+We focus on $F_{ST}$ in this notebook, but PopGenome can calculate many other summary statistics from the same window objects. This chunk is here as a quick guide so you can see what else is possible.
+
+```{r popgenome-help, eval=FALSE}
+# Starting point: a windowed PopGenome object such as
+# ddrad_genome_slide or wgs_genome_slide
+
+# 1. Within-population nucleotide diversity (pi)
+example_pi <- diversity.stats(ddrad_genome_slide, pi = TRUE)
+head(as.data.frame(example_pi@Pi))
+
+# 2. Between-population absolute divergence (Dxy)
+example_dxy <- diversity.stats.between(example_pi)
+head(as.data.frame(example_dxy@nuc.diversity.between))
+
+# 3. Tajima's D and other neutrality statistics
+example_tajima <- neutrality.stats(example_dxy, FAST = TRUE)
+head(as.data.frame(example_tajima@Tajima.D))
+
+# 4. Haplotype-based statistics
+example_haplo <- haplotype.stats(ddrad_genome_slide)
+
+# 5. Linkage disequilibrium
+example_ld <- linkage.stats(ddrad_genome_slide)
+
+# 6. Fu and Li statistics
+example_fu_li <- neutrality.stats(ddrad_genome_slide, FAST = TRUE)
+head(as.data.frame(example_fu_li@Fu.Li.D))
 ```
 
-## Combine the ddRAD panels
+Here is one small executed example using the current window objects.
 
-Place the four ddRAD plots into one vertical summary panel for teaching and comparison.
+```{r popgenome-example-output}
+ddrad_other_stats <- diversity.stats(ddrad_genome_slide, pi = TRUE)
+ddrad_other_stats <- diversity.stats.between(ddrad_other_stats)
+ddrad_other_stats <- suppressWarnings(neutrality.stats(ddrad_other_stats, FAST = TRUE))
 
-```{r ddrad-summary-plot, fig.width=10, fig.height=14}
-ddrad_summary_plot <- cowplot::plot_grid(ddrad_fst_plot, ddrad_pi_plot, ddrad_dxy_plot, ddrad_tajima_plot, ncol = 1, align = "v")
-
-ggsave(file.path(output_dir, "ddrad_scaffold1_summary.png"), ddrad_summary_plot, width = 10, height = 14, dpi = 320)
-ddrad_summary_plot
+list(
+  ddrad_pi = head(as.data.frame(ddrad_other_stats@Pi)),
+  ddrad_dxy = head(as.data.frame(ddrad_other_stats@nuc.diversity.between)),
+  ddrad_tajima_d = head(as.data.frame(ddrad_other_stats@Tajima.D))
+)
 ```
 
-## Compare ddRAD and WGS Fst
+How to interpret these outputs:
 
-Finish with a simple two-panel comparison so students can inspect how the ddRAD and WGS Fst scans line up.
+- Higher $pi$ means more genetic diversity within a population.
+- Higher Dxy means stronger absolute divergence between populations.
+- Tajima's D near 0 is broadly consistent with neutrality, while strong positive or negative values can suggest demographic change or selection.
 
-```{r ddrad-vs-wgs-fst, fig.width=9, fig.height=7}
-comparison_plot <- cowplot::plot_grid(ddrad_fst_plot, wgs_fst_plot, ncol = 1, align = "v")
+## Compare WGS and ddRAD directly
 
-ggsave(file.path(output_dir, "ddrad_vs_wgs_fst.png"), comparison_plot, width = 9, height = 7, dpi = 320)
-comparison_plot
+This final chunk puts both scans into the same figure so the overall scaffold patterns are easier to compare, with ddRAD first and WGS second.
+
+```{r compare-plots, fig.width=9, fig.height=7}
+op <- par(mfrow = c(2, 1), mar = c(4, 4, 3, 1))
+
+plot(
+  ddrad_fst$midpoint_mb,
+  ddrad_fst$fst,
+  pch = 16,
+  cex = 0.6,
+  col = "#01665e80",
+  ylim = c(0, 1),
+  main = "ddRAD: scaffold 1",
+  xlab = "Scaffold 1 position (Mb)",
+  ylab = "Fst"
+)
+lines(lowess(ddrad_fst$midpoint_mb, ddrad_fst$fst, f = 0.15), col = "#35978f", lwd = 2)
+
+plot(
+  wgs_fst$midpoint_mb,
+  wgs_fst$fst,
+  pch = 16,
+  cex = 0.6,
+  col = "#8c510a80",
+  ylim = c(0, 1),
+  main = "WGS: scaffold 1",
+  xlab = "Scaffold 1 position (Mb)",
+  ylab = "Fst"
+)
+lines(lowess(wgs_fst$midpoint_mb, wgs_fst$fst, f = 0.15), col = "#bf812d", lwd = 2)
+
+par(op)
 ```
+
