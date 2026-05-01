@@ -51,7 +51,7 @@ The numbered datasets are:
 This first chunk only sets global notebook options. 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
 knitr::opts_knit$set(root.dir = "/home/rstudio/work")
 ```
 
