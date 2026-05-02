@@ -328,7 +328,7 @@ head(ddrad_stats)
 head(wgs_stats)
 ```
 
-These curves are drawn on their raw scales, like in your example script, so the main goal is to compare where peaks and troughs occur along the scaffold.
+These curves are drawn on their raw scales, so the main goal is to compare where peaks and troughs occur along the scaffold.
 
 ```{r combined-ddrad-plot, fig.width=9, fig.height=4}
 plot_combined_stats(ddrad_stats, "ddRAD: scaffold 1 with Fst, pi, and Dxy")
