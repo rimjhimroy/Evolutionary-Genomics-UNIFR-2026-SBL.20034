@@ -5,7 +5,7 @@ output: html_document
 
 ## Aim
 
-In this notebook we do one simple task twice: calculate window-based $F_{ST}$ along scaffold 1 and compare the pattern between the WGS and ddRAD datasets.
+In this notebook we will calculate window-based $F_{ST}$ along scaffold 1 and compare the pattern between the WGS and ddRAD datasets.
 
 Interpretation guide:
 
@@ -51,92 +51,19 @@ window_jump <- 1000
 ```{r output-dir}
 output_dir <- "/home/rstudio/work/outputs/03-scaffold1-window-scan"
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+plot_colors <- c(
+  fst = "#E69F00",
+  pi_A2G = "#56B4E9",
+  pi_A2S = "#009E73",
+  pi_overall = "#CC79A7",
+  dxy = "#D55E00"
+)
 ```
 
-## Helper functions
+## Window summary tables
 
-These helpers keep the ddRAD and WGS code paths consistent when we calculate and plot multiple summary statistics per window.
-
-```{r helpers}
-compute_window_stats <- function(genome_slide, dataset_label, variant_positions) {
-  genome_slide <- F_ST.stats(genome_slide, mode = "nucleotide")
-  fst <- as.data.frame(get.F_ST(genome_slide, mode = FALSE, pairwise = TRUE)[1])
-  names(fst) <- "fst"
-  fst$fst[fst$fst < 0] <- 0
-
-  fst$start_pos <- as.numeric(sub(" -.*", "", genome_slide@region.names))
-  fst$end_pos <- as.numeric(sub(" :", "", sub(".*- ", "", genome_slide@region.names)))
-  fst$midpoint_mb <- (fst$start_pos + fst$end_pos) / 2e6
-  fst$n_snps <- mapply(
-    function(start, end) sum(variant_positions >= start & variant_positions <= end),
-    fst$start_pos,
-    fst$end_pos
-  )
-
-  genome_slide <- diversity.stats(genome_slide, pi = TRUE)
-  pi_values <- as.data.frame(genome_slide@Pi)
-  names(pi_values) <- c("pi_A2G", "pi_A2S")
-
-  genome_slide <- diversity.stats.between(genome_slide)
-  dxy_values <- as.data.frame(genome_slide@nuc.diversity.between)
-  names(dxy_values) <- "dxy"
-
-  stats_df <- cbind(fst, pi_values, dxy_values)
-  stats_df$dataset <- dataset_label
-  stats_df[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst", "pi_A2G", "pi_A2S", "dxy")]
-}
-
-make_combined_stats_long <- function(stats_df) {
-  rbind(
-    data.frame(
-      dataset = stats_df$dataset,
-      midpoint_mb = stats_df$midpoint_mb,
-      statistic = "Fst",
-      value = stats_df$fst
-    ),
-    data.frame(
-      dataset = stats_df$dataset,
-      midpoint_mb = stats_df$midpoint_mb,
-      statistic = "pi A2G",
-      value = stats_df$pi_A2G
-    ),
-    data.frame(
-      dataset = stats_df$dataset,
-      midpoint_mb = stats_df$midpoint_mb,
-      statistic = "pi A2S",
-      value = stats_df$pi_A2S
-    ),
-    data.frame(
-      dataset = stats_df$dataset,
-      midpoint_mb = stats_df$midpoint_mb,
-      statistic = "Dxy",
-      value = stats_df$dxy
-    )
-  )
-}
-
-plot_combined_stats <- function(stats_df, title_text) {
-  stats_long <- make_combined_stats_long(stats_df)
-
-  ggplot(stats_long, aes(x = midpoint_mb, y = value, color = statistic)) +
-    geom_smooth(method = "loess", se = FALSE, span = 0.15, linewidth = 1, na.rm = TRUE) +
-    labs(
-      title = title_text,
-      x = "Scaffold 1 position (Mb)",
-      y = "Window statistic value",
-      color = NULL
-    ) +
-    scale_color_manual(
-      values = c(
-        "Fst" = "#d95f02",
-        "pi A2G" = "#1b9e77",
-        "pi A2S" = "#66a61e",
-        "Dxy" = "#7570b3"
-      )
-    ) +
-    theme_classic(base_size = 12)
-}
-```
+For each dataset we build one table with the window start, window end, midpoint, number of SNPs, $F_{ST}$, $pi$ for each population, and Dxy. The code is written out in full so each step can be read directly.
 
 ## ddRAD step 1: read the VCF and identify samples
 
@@ -182,13 +109,39 @@ length(ddrad_genome_slide@region.names)
 head(ddrad_genome_slide@region.names)
 ```
 
-## ddRAD step 4: calculate Fst for each window
+## ddRAD step 4: calculate Fst, pi, and Dxy for each window
 
-Again, we calculate one $F_{ST}$ value per window and set negative values to 0.
+We first calculate one $F_{ST}$ value per window and set negative values to 0. Then we add within-population diversity ($pi$) and between-population divergence (Dxy) to the same table.
 
 ```{r ddrad-fst-table}
 ddrad_positions <- as.numeric(ddrad_vcf@fix[, "POS"])
-ddrad_stats <- compute_window_stats(ddrad_genome_slide, "ddRAD", ddrad_positions)
+
+ddrad_genome_slide <- F_ST.stats(ddrad_genome_slide, mode = "nucleotide")
+ddrad_fst_values <- as.data.frame(get.F_ST(ddrad_genome_slide, mode = FALSE, pairwise = TRUE)[1])
+names(ddrad_fst_values) <- "fst"
+ddrad_fst_values$fst[ddrad_fst_values$fst < 0] <- 0
+
+ddrad_fst_values$start_pos <- as.numeric(sub(" -.*", "", ddrad_genome_slide@region.names))
+ddrad_fst_values$end_pos <- as.numeric(sub(" :", "", sub(".*- ", "", ddrad_genome_slide@region.names)))
+ddrad_fst_values$midpoint_mb <- (ddrad_fst_values$start_pos + ddrad_fst_values$end_pos) / 2e6
+ddrad_fst_values$n_snps <- mapply(
+  function(start, end) sum(ddrad_positions >= start & ddrad_positions <= end),
+  ddrad_fst_values$start_pos,
+  ddrad_fst_values$end_pos
+)
+
+ddrad_genome_slide <- diversity.stats(ddrad_genome_slide, pi = TRUE)
+ddrad_pi_values <- as.data.frame(ddrad_genome_slide@Pi)
+names(ddrad_pi_values) <- c("pi_A2G", "pi_A2S")
+
+ddrad_genome_slide <- diversity.stats.between(ddrad_genome_slide)
+ddrad_dxy_values <- as.data.frame(ddrad_genome_slide@nuc.diversity.between)
+names(ddrad_dxy_values) <- "dxy"
+
+ddrad_stats <- cbind(ddrad_fst_values, ddrad_pi_values, ddrad_dxy_values)
+ddrad_stats$dataset <- "ddRAD"
+ddrad_stats <- ddrad_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst", "pi_A2G", "pi_A2S", "dxy")]
+
 ddrad_fst <- ddrad_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst")]
 
 write.table(
@@ -207,20 +160,27 @@ head(ddrad_fst)
 This plot is interpreted in the same way as the WGS scan, but ddRAD often looks noisier because fewer markers are available.
 
 ```{r ddrad-plot, fig.width=9, fig.height=4}
-ddrad_plot <- ggplot(ddrad_fst, aes(x = midpoint_mb, y = fst)) +
-  geom_point(color = "#01665e", alpha = 0.55, size = 1.2) +
-  geom_smooth(method = "loess", se = FALSE, span = 0.15, color = "#35978f", linewidth = 1) +
-  coord_cartesian(ylim = c(0, 1)) +
-  labs(
-    title = "ddRAD: scaffold 1 window-based Fst",
-    x = "Scaffold 1 position (Mb)",
-    y = "Fst between A2G and A2S"
-  ) +
-  theme_classic(base_size = 12)
+loess.fst_ddRAD_only <- loess(ddrad_fst$fst ~ seq_along(ddrad_fst$fst), span = 0.15, na.action = na.exclude)
 
-ggsave(file.path(output_dir, "ddrad_scaffold1_fst.png"), ddrad_plot, width = 9, height = 4, dpi = 320)
+png(file.path(output_dir, "ddrad_scaffold1_fst.png"), width = 9, height = 4, units = "in", res = 320)
+plot(
+  ddrad_fst$fst,
+  ylim = c(0, 1),
+  main = "scaffold 1 - ddRAD",
+  ylab = "Fst_A2G.A2S",
+  xlab = "window_start_pos"
+)
+lines(predict(loess.fst_ddRAD_only), col = plot_colors["fst"], lwd = 3)
+dev.off()
 
-ddrad_plot
+plot(
+  ddrad_fst$fst,
+  ylim = c(0, 1),
+  main = "scaffold 1 - ddRAD",
+  ylab = "Fst_A2G.A2S",
+  xlab = "window_start_pos"
+)
+lines(predict(loess.fst_ddRAD_only), col = plot_colors["fst"], lwd = 3)
 ```
 
 ddRAD interpretation:
@@ -273,13 +233,39 @@ length(wgs_genome_slide@region.names)
 head(wgs_genome_slide@region.names)
 ```
 
-## WGS step 4: calculate Fst for each window
+## WGS step 4: calculate Fst, pi, and Dxy for each window
 
-This gives one $F_{ST}$ value per window. Negative values are set to 0 because they are usually treated as no differentiation.
+This follows the same sequence as ddRAD: calculate $F_{ST}$, extract the window positions, count the SNPs in each window, and then add $pi$ and Dxy.
 
 ```{r wgs-fst-table}
 wgs_positions <- as.numeric(wgs_vcf@fix[, "POS"])
-wgs_stats <- compute_window_stats(wgs_genome_slide, "WGS", wgs_positions)
+
+wgs_genome_slide <- F_ST.stats(wgs_genome_slide, mode = "nucleotide")
+wgs_fst_values <- as.data.frame(get.F_ST(wgs_genome_slide, mode = FALSE, pairwise = TRUE)[1])
+names(wgs_fst_values) <- "fst"
+wgs_fst_values$fst[wgs_fst_values$fst < 0] <- 0
+
+wgs_fst_values$start_pos <- as.numeric(sub(" -.*", "", wgs_genome_slide@region.names))
+wgs_fst_values$end_pos <- as.numeric(sub(" :", "", sub(".*- ", "", wgs_genome_slide@region.names)))
+wgs_fst_values$midpoint_mb <- (wgs_fst_values$start_pos + wgs_fst_values$end_pos) / 2e6
+wgs_fst_values$n_snps <- mapply(
+  function(start, end) sum(wgs_positions >= start & wgs_positions <= end),
+  wgs_fst_values$start_pos,
+  wgs_fst_values$end_pos
+)
+
+wgs_genome_slide <- diversity.stats(wgs_genome_slide, pi = TRUE)
+wgs_pi_values <- as.data.frame(wgs_genome_slide@Pi)
+names(wgs_pi_values) <- c("pi_A2G", "pi_A2S")
+
+wgs_genome_slide <- diversity.stats.between(wgs_genome_slide)
+wgs_dxy_values <- as.data.frame(wgs_genome_slide@nuc.diversity.between)
+names(wgs_dxy_values) <- "dxy"
+
+wgs_stats <- cbind(wgs_fst_values, wgs_pi_values, wgs_dxy_values)
+wgs_stats$dataset <- "WGS"
+wgs_stats <- wgs_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst", "pi_A2G", "pi_A2S", "dxy")]
+
 wgs_fst <- wgs_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst")]
 
 write.table(
@@ -298,20 +284,27 @@ head(wgs_fst)
 The points show individual windows and the smooth line shows the broad trend across the scaffold.
 
 ```{r wgs-plot, fig.width=9, fig.height=4}
-wgs_plot <- ggplot(wgs_fst, aes(x = midpoint_mb, y = fst)) +
-  geom_point(color = "#8c510a", alpha = 0.55, size = 1.2) +
-  geom_smooth(method = "loess", se = FALSE, span = 0.15, color = "#bf812d", linewidth = 1) +
-  coord_cartesian(ylim = c(0, 1)) +
-  labs(
-    title = "WGS: scaffold 1 window-based Fst",
-    x = "Scaffold 1 position (Mb)",
-    y = "Fst between A2G and A2S"
-  ) +
-  theme_classic(base_size = 12)
+loess.fst_wgs_only <- loess(wgs_fst$fst ~ seq_along(wgs_fst$fst), span = 0.15, na.action = na.exclude)
 
-ggsave(file.path(output_dir, "wgs_scaffold1_fst.png"), wgs_plot, width = 9, height = 4, dpi = 320)
+png(file.path(output_dir, "wgs_scaffold1_fst.png"), width = 9, height = 4, units = "in", res = 320)
+plot(
+  wgs_fst$fst,
+  ylim = c(0, 1),
+  main = "scaffold 1 - wgs",
+  ylab = "Fst_A2G.A2S",
+  xlab = "window_start_pos"
+)
+lines(predict(loess.fst_wgs_only), col = plot_colors["fst"], lwd = 3)
+dev.off()
 
-wgs_plot
+plot(
+  wgs_fst$fst,
+  ylim = c(0, 1),
+  main = "scaffold 1 - wgs",
+  ylab = "Fst_A2G.A2S",
+  xlab = "window_start_pos"
+)
+lines(predict(loess.fst_wgs_only), col = plot_colors["fst"], lwd = 3)
 ```
 
 WGS interpretation:
@@ -331,91 +324,84 @@ head(wgs_stats)
 These curves are drawn on their raw scales, so the main goal is to compare where peaks and troughs occur along the scaffold.
 
 ```{r combined-ddrad-plot, fig.width=9, fig.height=4}
-plot_combined_stats(ddrad_stats, "ddRAD: scaffold 1 with Fst, pi, and Dxy")
+ddrad_stats$pi_overall <- rowMeans(ddrad_stats[, c("pi_A2G", "pi_A2S")], na.rm = TRUE)
+
+loess.fst_ddRAD <- loess(ddrad_stats$fst ~ seq_along(ddrad_stats$fst), span = 0.15, na.action = na.exclude)
+loess.pi_A2G_ddRAD <- loess(ddrad_stats$pi_A2G ~ seq_along(ddrad_stats$pi_A2G), span = 0.15, na.action = na.exclude)
+loess.pi_A2S_ddRAD <- loess(ddrad_stats$pi_A2S ~ seq_along(ddrad_stats$pi_A2S), span = 0.15, na.action = na.exclude)
+loess.pi_all_ddRAD <- loess(ddrad_stats$pi_overall ~ seq_along(ddrad_stats$pi_overall), span = 0.15, na.action = na.exclude)
+loess.dxy_ddRAD <- loess(ddrad_stats$dxy ~ seq_along(ddrad_stats$dxy), span = 0.15, na.action = na.exclude)
+
+plot(
+  ddrad_stats$fst,
+  ylim = c(0, 1),
+  main = "scaffold 1 - ddRAD",
+  ylab = "Fst_A2G.A2S",
+  xlab = "window_start_pos"
+)
+lines(predict(loess.fst_ddRAD), col = plot_colors["fst"], lwd = 3)
+lines(predict(loess.pi_A2G_ddRAD), col = plot_colors["pi_A2G"], lwd = 3)
+lines(predict(loess.pi_A2S_ddRAD), col = plot_colors["pi_A2S"], lwd = 3)
+lines(predict(loess.pi_all_ddRAD), col = plot_colors["pi_overall"], lwd = 3)
+lines(predict(loess.dxy_ddRAD), col = plot_colors["dxy"], lwd = 3)
 ```
 
 ```{r combined-wgs-plot, fig.width=9, fig.height=4}
-plot_combined_stats(wgs_stats, "WGS: scaffold 1 with Fst, pi, and Dxy")
-```
+wgs_stats$pi_overall <- rowMeans(wgs_stats[, c("pi_A2G", "pi_A2S")], na.rm = TRUE)
 
-## What else can PopGenome calculate?
+loess.fst_wgs <- loess(wgs_stats$fst ~ seq_along(wgs_stats$fst), span = 0.15, na.action = na.exclude)
+loess.pi_A2G_wgs <- loess(wgs_stats$pi_A2G ~ seq_along(wgs_stats$pi_A2G), span = 0.15, na.action = na.exclude)
+loess.pi_A2S_wgs <- loess(wgs_stats$pi_A2S ~ seq_along(wgs_stats$pi_A2S), span = 0.15, na.action = na.exclude)
+loess.pi_all_wgs <- loess(wgs_stats$pi_overall ~ seq_along(wgs_stats$pi_overall), span = 0.15, na.action = na.exclude)
+loess.dxy_wgs <- loess(wgs_stats$dxy ~ seq_along(wgs_stats$dxy), span = 0.15, na.action = na.exclude)
 
-We focus on $F_{ST}$ in this notebook, but PopGenome can calculate many other summary statistics from the same window objects. This chunk is here as a quick guide so you can see what else is possible.
-
-```{r popgenome-help, eval=FALSE}
-# Starting point: a windowed PopGenome object such as
-# ddrad_genome_slide or wgs_genome_slide
-
-# 1. Within-population nucleotide diversity (pi)
-example_pi <- diversity.stats(ddrad_genome_slide, pi = TRUE)
-head(as.data.frame(example_pi@Pi))
-
-# 2. Between-population absolute divergence (Dxy)
-example_dxy <- diversity.stats.between(example_pi)
-head(as.data.frame(example_dxy@nuc.diversity.between))
-
-# 3. Tajima's D and other neutrality statistics
-example_tajima <- neutrality.stats(example_dxy, FAST = TRUE)
-head(as.data.frame(example_tajima@Tajima.D))
-
-# 4. Haplotype-based statistics
-example_haplo <- haplotype.stats(ddrad_genome_slide)
-
-# 5. Linkage disequilibrium
-example_ld <- linkage.stats(ddrad_genome_slide)
-
-# 6. Fu and Li statistics
-example_fu_li <- neutrality.stats(ddrad_genome_slide, FAST = TRUE)
-head(as.data.frame(example_fu_li@Fu.Li.D))
-```
-
-Here is one small executed example using the current window objects.
-
-```{r popgenome-example-output}
-ddrad_other_stats <- diversity.stats(ddrad_genome_slide, pi = TRUE)
-ddrad_other_stats <- diversity.stats.between(ddrad_other_stats)
-ddrad_other_stats <- suppressWarnings(neutrality.stats(ddrad_other_stats, FAST = TRUE))
-
-list(
-  ddrad_pi = head(as.data.frame(ddrad_other_stats@Pi)),
-  ddrad_dxy = head(as.data.frame(ddrad_other_stats@nuc.diversity.between)),
-  ddrad_tajima_d = head(as.data.frame(ddrad_other_stats@Tajima.D))
+plot(
+  wgs_stats$fst,
+  ylim = c(0, 1),
+  main = "scaffold 1 - wgs",
+  ylab = "Fst_A2G.A2S",
+  xlab = "window_start_pos"
 )
+lines(predict(loess.fst_wgs), col = plot_colors["fst"], lwd = 3)
+lines(predict(loess.pi_A2G_wgs), col = plot_colors["pi_A2G"], lwd = 3)
+lines(predict(loess.pi_A2S_wgs), col = plot_colors["pi_A2S"], lwd = 3)
+lines(predict(loess.pi_all_wgs), col = plot_colors["pi_overall"], lwd = 3)
+lines(predict(loess.dxy_wgs), col = plot_colors["dxy"], lwd = 3)
 ```
-
-How to interpret these outputs:
-
-- Higher $pi$ means more genetic diversity within a population.
-- Higher Dxy means stronger absolute divergence between populations.
-- Tajima's D near 0 is broadly consistent with the standard neutral model under constant population size, but deviations can reflect demography, structure, linked selection, or selection at nearby sites.
 
 ## Compare WGS and ddRAD directly
 
 This final chunk keeps the same two-panel comparison, but now each panel overlays $F_{ST}$, $pi$, and Dxy.
 
 ```{r compare-plots, fig.width=9, fig.height=7}
-combined_all_stats <- rbind(
-  make_combined_stats_long(ddrad_stats),
-  make_combined_stats_long(wgs_stats)
-)
+old_par <- par(mfrow = c(1, 2))
 
-ggplot(combined_all_stats, aes(x = midpoint_mb, y = value, color = statistic)) +
-  geom_smooth(method = "loess", se = FALSE, span = 0.15, linewidth = 1, na.rm = TRUE) +
-  facet_wrap(~ dataset, ncol = 1) +
-  labs(
-    title = "Scaffold 1 window scans: ddRAD versus WGS",
-    x = "Scaffold 1 position (Mb)",
-    y = "Window statistic value",
-    color = NULL
-  ) +
-  scale_color_manual(
-    values = c(
-      "Fst" = "#d95f02",
-      "pi A2G" = "#1b9e77",
-      "pi A2S" = "#66a61e",
-      "Dxy" = "#7570b3"
-    )
-  ) +
-  theme_classic(base_size = 12)
+plot(
+  wgs_stats$fst,
+  ylim = c(0, 3.1),
+  main = "scaffold 1 - wgs",
+  ylab = "Fst_A2G.A2S",
+  xlab = "window_start_pos"
+)
+lines(predict(loess.fst_wgs), col = plot_colors["fst"], lwd = 3)
+lines(predict(loess.pi_A2G_wgs), col = plot_colors["pi_A2G"], lwd = 3)
+lines(predict(loess.pi_A2S_wgs), col = plot_colors["pi_A2S"], lwd = 3)
+lines(predict(loess.pi_all_wgs), col = plot_colors["pi_overall"], lwd = 3)
+lines(predict(loess.dxy_wgs), col = plot_colors["dxy"], lwd = 3)
+
+plot(
+  ddrad_stats$fst,
+  ylim = c(0, 1),
+  main = "scaffold 1 - ddRAD",
+  ylab = "Fst_A2G.A2S",
+  xlab = "window_start_pos"
+)
+lines(predict(loess.fst_ddRAD), col = plot_colors["fst"], lwd = 3)
+lines(predict(loess.pi_A2G_ddRAD), col = plot_colors["pi_A2G"], lwd = 3)
+lines(predict(loess.pi_A2S_ddRAD), col = plot_colors["pi_A2S"], lwd = 3)
+lines(predict(loess.pi_all_ddRAD), col = plot_colors["pi_overall"], lwd = 3)
+lines(predict(loess.dxy_ddRAD), col = plot_colors["dxy"], lwd = 3)
+
+par(old_par)
 ```
 
