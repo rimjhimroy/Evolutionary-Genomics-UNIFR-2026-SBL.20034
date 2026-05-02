@@ -59,6 +59,14 @@ plot_colors <- c(
   pi_overall = "#CC79A7",
   dxy = "#D55E00"
 )
+
+plot_legend_labels <- c(
+  fst = "Fst",
+  pi_A2G = "pi A2G",
+  pi_A2S = "pi A2S",
+  pi_overall = "pi overall",
+  dxy = "Dxy"
+)
 ```
 
 ## Window summary tables
@@ -141,6 +149,23 @@ names(ddrad_dxy_values) <- "dxy"
 ddrad_stats <- cbind(ddrad_fst_values, ddrad_pi_values, ddrad_dxy_values)
 ddrad_stats$dataset <- "ddRAD"
 ddrad_stats <- ddrad_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst", "pi_A2G", "pi_A2S", "dxy")]
+ddrad_stats$pi_overall <- rowMeans(ddrad_stats[, c("pi_A2G", "pi_A2S")], na.rm = TRUE)
+
+ddrad_loess <- list(
+  fst = loess(ddrad_stats$fst ~ seq_along(ddrad_stats$fst), span = 0.15, na.action = na.exclude),
+  pi_A2G = loess(ddrad_stats$pi_A2G ~ seq_along(ddrad_stats$pi_A2G), span = 0.15, na.action = na.exclude),
+  pi_A2S = loess(ddrad_stats$pi_A2S ~ seq_along(ddrad_stats$pi_A2S), span = 0.15, na.action = na.exclude),
+  pi_overall = loess(ddrad_stats$pi_overall ~ seq_along(ddrad_stats$pi_overall), span = 0.15, na.action = na.exclude),
+  dxy = loess(ddrad_stats$dxy ~ seq_along(ddrad_stats$dxy), span = 0.15, na.action = na.exclude)
+)
+
+ddrad_smooth <- list(
+  fst = predict(ddrad_loess$fst),
+  pi_A2G = predict(ddrad_loess$pi_A2G),
+  pi_A2S = predict(ddrad_loess$pi_A2S),
+  pi_overall = predict(ddrad_loess$pi_overall),
+  dxy = predict(ddrad_loess$dxy)
+)
 
 ddrad_fst <- ddrad_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst")]
 
@@ -160,8 +185,6 @@ head(ddrad_fst)
 This plot is interpreted in the same way as the WGS scan, but ddRAD often looks noisier because fewer markers are available.
 
 ```{r ddrad-plot, fig.width=9, fig.height=4}
-loess.fst_ddRAD_only <- loess(ddrad_fst$fst ~ seq_along(ddrad_fst$fst), span = 0.15, na.action = na.exclude)
-
 png(file.path(output_dir, "ddrad_scaffold1_fst.png"), width = 9, height = 4, units = "in", res = 320)
 plot(
   ddrad_fst$fst,
@@ -170,7 +193,15 @@ plot(
   ylab = "Fst_A2G.A2S",
   xlab = "window_start_pos"
 )
-lines(predict(loess.fst_ddRAD_only), col = plot_colors["fst"], lwd = 3)
+lines(ddrad_smooth$fst, col = plot_colors["fst"], lwd = 3)
+legend(
+  "topright",
+  legend = plot_legend_labels["fst"],
+  col = plot_colors["fst"],
+  lwd = 3,
+  bty = "n",
+  cex = 0.85
+)
 dev.off()
 
 plot(
@@ -180,7 +211,15 @@ plot(
   ylab = "Fst_A2G.A2S",
   xlab = "window_start_pos"
 )
-lines(predict(loess.fst_ddRAD_only), col = plot_colors["fst"], lwd = 3)
+lines(ddrad_smooth$fst, col = plot_colors["fst"], lwd = 3)
+legend(
+  "topright",
+  legend = plot_legend_labels["fst"],
+  col = plot_colors["fst"],
+  lwd = 3,
+  bty = "n",
+  cex = 0.85
+)
 ```
 
 ddRAD interpretation:
@@ -265,6 +304,23 @@ names(wgs_dxy_values) <- "dxy"
 wgs_stats <- cbind(wgs_fst_values, wgs_pi_values, wgs_dxy_values)
 wgs_stats$dataset <- "WGS"
 wgs_stats <- wgs_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst", "pi_A2G", "pi_A2S", "dxy")]
+wgs_stats$pi_overall <- rowMeans(wgs_stats[, c("pi_A2G", "pi_A2S")], na.rm = TRUE)
+
+wgs_loess <- list(
+  fst = loess(wgs_stats$fst ~ seq_along(wgs_stats$fst), span = 0.15, na.action = na.exclude),
+  pi_A2G = loess(wgs_stats$pi_A2G ~ seq_along(wgs_stats$pi_A2G), span = 0.15, na.action = na.exclude),
+  pi_A2S = loess(wgs_stats$pi_A2S ~ seq_along(wgs_stats$pi_A2S), span = 0.15, na.action = na.exclude),
+  pi_overall = loess(wgs_stats$pi_overall ~ seq_along(wgs_stats$pi_overall), span = 0.15, na.action = na.exclude),
+  dxy = loess(wgs_stats$dxy ~ seq_along(wgs_stats$dxy), span = 0.15, na.action = na.exclude)
+)
+
+wgs_smooth <- list(
+  fst = predict(wgs_loess$fst),
+  pi_A2G = predict(wgs_loess$pi_A2G),
+  pi_A2S = predict(wgs_loess$pi_A2S),
+  pi_overall = predict(wgs_loess$pi_overall),
+  dxy = predict(wgs_loess$dxy)
+)
 
 wgs_fst <- wgs_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst")]
 
@@ -284,8 +340,6 @@ head(wgs_fst)
 The points show individual windows and the smooth line shows the broad trend across the scaffold.
 
 ```{r wgs-plot, fig.width=9, fig.height=4}
-loess.fst_wgs_only <- loess(wgs_fst$fst ~ seq_along(wgs_fst$fst), span = 0.15, na.action = na.exclude)
-
 png(file.path(output_dir, "wgs_scaffold1_fst.png"), width = 9, height = 4, units = "in", res = 320)
 plot(
   wgs_fst$fst,
@@ -294,7 +348,15 @@ plot(
   ylab = "Fst_A2G.A2S",
   xlab = "window_start_pos"
 )
-lines(predict(loess.fst_wgs_only), col = plot_colors["fst"], lwd = 3)
+lines(wgs_smooth$fst, col = plot_colors["fst"], lwd = 3)
+legend(
+  "topright",
+  legend = plot_legend_labels["fst"],
+  col = plot_colors["fst"],
+  lwd = 3,
+  bty = "n",
+  cex = 0.85
+)
 dev.off()
 
 plot(
@@ -304,7 +366,15 @@ plot(
   ylab = "Fst_A2G.A2S",
   xlab = "window_start_pos"
 )
-lines(predict(loess.fst_wgs_only), col = plot_colors["fst"], lwd = 3)
+lines(wgs_smooth$fst, col = plot_colors["fst"], lwd = 3)
+legend(
+  "topright",
+  legend = plot_legend_labels["fst"],
+  col = plot_colors["fst"],
+  lwd = 3,
+  bty = "n",
+  cex = 0.85
+)
 ```
 
 WGS interpretation:
@@ -324,14 +394,6 @@ head(wgs_stats)
 These curves are drawn on their raw scales, so the main goal is to compare where peaks and troughs occur along the scaffold.
 
 ```{r combined-ddrad-plot, fig.width=9, fig.height=4}
-ddrad_stats$pi_overall <- rowMeans(ddrad_stats[, c("pi_A2G", "pi_A2S")], na.rm = TRUE)
-
-loess.fst_ddRAD <- loess(ddrad_stats$fst ~ seq_along(ddrad_stats$fst), span = 0.15, na.action = na.exclude)
-loess.pi_A2G_ddRAD <- loess(ddrad_stats$pi_A2G ~ seq_along(ddrad_stats$pi_A2G), span = 0.15, na.action = na.exclude)
-loess.pi_A2S_ddRAD <- loess(ddrad_stats$pi_A2S ~ seq_along(ddrad_stats$pi_A2S), span = 0.15, na.action = na.exclude)
-loess.pi_all_ddRAD <- loess(ddrad_stats$pi_overall ~ seq_along(ddrad_stats$pi_overall), span = 0.15, na.action = na.exclude)
-loess.dxy_ddRAD <- loess(ddrad_stats$dxy ~ seq_along(ddrad_stats$dxy), span = 0.15, na.action = na.exclude)
-
 plot(
   ddrad_stats$fst,
   ylim = c(0, 1),
@@ -339,22 +401,22 @@ plot(
   ylab = "Fst_A2G.A2S",
   xlab = "window_start_pos"
 )
-lines(predict(loess.fst_ddRAD), col = plot_colors["fst"], lwd = 3)
-lines(predict(loess.pi_A2G_ddRAD), col = plot_colors["pi_A2G"], lwd = 3)
-lines(predict(loess.pi_A2S_ddRAD), col = plot_colors["pi_A2S"], lwd = 3)
-lines(predict(loess.pi_all_ddRAD), col = plot_colors["pi_overall"], lwd = 3)
-lines(predict(loess.dxy_ddRAD), col = plot_colors["dxy"], lwd = 3)
+lines(ddrad_smooth$fst, col = plot_colors["fst"], lwd = 3)
+lines(ddrad_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
+lines(ddrad_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
+lines(ddrad_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
+lines(ddrad_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
+legend(
+  "topright",
+  legend = unname(plot_legend_labels),
+  col = unname(plot_colors),
+  lwd = 3,
+  bty = "n",
+  cex = 0.8
+)
 ```
 
 ```{r combined-wgs-plot, fig.width=9, fig.height=4}
-wgs_stats$pi_overall <- rowMeans(wgs_stats[, c("pi_A2G", "pi_A2S")], na.rm = TRUE)
-
-loess.fst_wgs <- loess(wgs_stats$fst ~ seq_along(wgs_stats$fst), span = 0.15, na.action = na.exclude)
-loess.pi_A2G_wgs <- loess(wgs_stats$pi_A2G ~ seq_along(wgs_stats$pi_A2G), span = 0.15, na.action = na.exclude)
-loess.pi_A2S_wgs <- loess(wgs_stats$pi_A2S ~ seq_along(wgs_stats$pi_A2S), span = 0.15, na.action = na.exclude)
-loess.pi_all_wgs <- loess(wgs_stats$pi_overall ~ seq_along(wgs_stats$pi_overall), span = 0.15, na.action = na.exclude)
-loess.dxy_wgs <- loess(wgs_stats$dxy ~ seq_along(wgs_stats$dxy), span = 0.15, na.action = na.exclude)
-
 plot(
   wgs_stats$fst,
   ylim = c(0, 1),
@@ -362,11 +424,19 @@ plot(
   ylab = "Fst_A2G.A2S",
   xlab = "window_start_pos"
 )
-lines(predict(loess.fst_wgs), col = plot_colors["fst"], lwd = 3)
-lines(predict(loess.pi_A2G_wgs), col = plot_colors["pi_A2G"], lwd = 3)
-lines(predict(loess.pi_A2S_wgs), col = plot_colors["pi_A2S"], lwd = 3)
-lines(predict(loess.pi_all_wgs), col = plot_colors["pi_overall"], lwd = 3)
-lines(predict(loess.dxy_wgs), col = plot_colors["dxy"], lwd = 3)
+lines(wgs_smooth$fst, col = plot_colors["fst"], lwd = 3)
+lines(wgs_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
+lines(wgs_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
+lines(wgs_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
+lines(wgs_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
+legend(
+  "topright",
+  legend = unname(plot_legend_labels),
+  col = unname(plot_colors),
+  lwd = 3,
+  bty = "n",
+  cex = 0.8
+)
 ```
 
 ## Compare WGS and ddRAD directly
@@ -383,11 +453,19 @@ plot(
   ylab = "Fst_A2G.A2S",
   xlab = "window_start_pos"
 )
-lines(predict(loess.fst_wgs), col = plot_colors["fst"], lwd = 3)
-lines(predict(loess.pi_A2G_wgs), col = plot_colors["pi_A2G"], lwd = 3)
-lines(predict(loess.pi_A2S_wgs), col = plot_colors["pi_A2S"], lwd = 3)
-lines(predict(loess.pi_all_wgs), col = plot_colors["pi_overall"], lwd = 3)
-lines(predict(loess.dxy_wgs), col = plot_colors["dxy"], lwd = 3)
+lines(wgs_smooth$fst, col = plot_colors["fst"], lwd = 3)
+lines(wgs_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
+lines(wgs_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
+lines(wgs_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
+lines(wgs_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
+legend(
+  "topright",
+  legend = unname(plot_legend_labels),
+  col = unname(plot_colors),
+  lwd = 3,
+  bty = "n",
+  cex = 0.75
+)
 
 plot(
   ddrad_stats$fst,
@@ -396,11 +474,19 @@ plot(
   ylab = "Fst_A2G.A2S",
   xlab = "window_start_pos"
 )
-lines(predict(loess.fst_ddRAD), col = plot_colors["fst"], lwd = 3)
-lines(predict(loess.pi_A2G_ddRAD), col = plot_colors["pi_A2G"], lwd = 3)
-lines(predict(loess.pi_A2S_ddRAD), col = plot_colors["pi_A2S"], lwd = 3)
-lines(predict(loess.pi_all_ddRAD), col = plot_colors["pi_overall"], lwd = 3)
-lines(predict(loess.dxy_ddRAD), col = plot_colors["dxy"], lwd = 3)
+lines(ddrad_smooth$fst, col = plot_colors["fst"], lwd = 3)
+lines(ddrad_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
+lines(ddrad_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
+lines(ddrad_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
+lines(ddrad_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
+legend(
+  "topright",
+  legend = unname(plot_legend_labels),
+  col = unname(plot_colors),
+  lwd = 3,
+  bty = "n",
+  cex = 0.75
+)
 
 par(old_par)
 ```
