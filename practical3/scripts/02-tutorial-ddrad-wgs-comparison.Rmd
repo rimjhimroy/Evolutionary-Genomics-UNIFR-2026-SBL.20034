@@ -114,7 +114,7 @@ pop(ddrad_genlight) <- ddrad_metadata$pop
 Calculate the ddRAD PCA, save the explained variance table, and compute the coordinates needed for later PCA plots.
 
 ```{r ddrad-pca}
-ddrad_pca <- glPca(ddrad_genlight, nf = 4)
+ddrad_pca <- glPca(ddrad_genlight, nf = 20)
 
 ddrad_explained_variance <- data.frame(
         principal_component = seq_along(ddrad_pca$eig),
@@ -152,7 +152,7 @@ Question: Do the first one or two ddRAD axes capture most of the variation, or i
 
 ```{r ddrad-eigenvalues, fig.width=6.5, fig.height=4.5}
 ddrad_eigenvalue_data <- as.data.frame(ddrad_explained_variance)
-ddrad_eigenvalue_data$principal_component_num <- suppressWarnings(as.integer(sub("^PC", "", ddrad_eigenvalue_data$principal_component)))
+ddrad_eigenvalue_data$principal_component_num <- ddrad_eigenvalue_data$principal_component
 if (any(is.na(ddrad_eigenvalue_data$principal_component_num))) {
         ddrad_eigenvalue_data$principal_component_num <- seq_len(nrow(ddrad_eigenvalue_data))
 }
@@ -324,7 +324,7 @@ pop(wgs_genlight) <- wgs_metadata$pop
 Calculate the WGS PCA, save the explained variance table, and compute the coordinates needed for later WGS plots.
 
 ```{r wgs-pca}
-wgs_pca <- glPca(wgs_genlight, nf = 4)
+wgs_pca <- glPca(wgs_genlight, nf = 20)
 
 wgs_explained_variance <- data.frame(
         principal_component = seq_along(wgs_pca$eig),
@@ -362,7 +362,7 @@ Question: Compared with ddRAD, does the WGS PCA show a steeper drop after the fi
 
 ```{r wgs-eigenvalues, fig.width=6.5, fig.height=4.5}
 wgs_eigenvalue_data <- as.data.frame(wgs_explained_variance)
-wgs_eigenvalue_data$principal_component_num <- suppressWarnings(as.integer(sub("^PC", "", wgs_eigenvalue_data$principal_component)))
+wgs_eigenvalue_data$principal_component_num <- wgs_eigenvalue_data$principal_component
 if (any(is.na(wgs_eigenvalue_data$principal_component_num))) {
         wgs_eigenvalue_data$principal_component_num <- seq_len(nrow(wgs_eigenvalue_data))
 }
@@ -563,10 +563,11 @@ wgs_fst_long$population_2 <- factor(wgs_fst_long$population_2, levels = rev(refe
 This heatmap shows the relative genetic differentiation among populations in the ddRAD dataset.
 
 ```{r ddrad-fst-heatmap, fig.width=6, fig.height=5}
+fst_limits <- range(c(ddrad_fst_long$value, wgs_fst_long$value), na.rm = TRUE)
 ddrad_heatmap <- ggplot(ddrad_fst_long, aes(x = population_1, y = population_2, fill = value)) +
         geom_tile(colour = "white", linewidth = 0.35) +
         geom_text(aes(label = sprintf("%.3f", value)), size = 3) +
-        scale_fill_gradient(low = "#F7FBFF", high = "#08306B") +
+        scale_fill_gradient(low = "#F7FBFF", high = "#08306B", limits = fst_limits) +
         labs(title = "ddRAD pairwise differentiation", x = NULL, y = NULL, fill = "Fst") +
         theme(axis.text.x = element_text(angle = 45, hjust = 1), panel.grid = element_blank())
 
@@ -581,7 +582,7 @@ This heatmap shows the relative genetic differentiation among populations in the
 wgs_heatmap <- ggplot(wgs_fst_long, aes(x = population_1, y = population_2, fill = value)) +
         geom_tile(colour = "white", linewidth = 0.35) +
         geom_text(aes(label = sprintf("%.3f", value)), size = 3) +
-        scale_fill_gradient(low = "#F7FBFF", high = "#08306B") +
+        scale_fill_gradient(low = "#F7FBFF", high = "#08306B", limits = fst_limits) +
         labs(title = "WGS pairwise differentiation", x = NULL, y = NULL, fill = "Fst") +
         theme(axis.text.x = element_text(angle = 45, hjust = 1), panel.grid = element_blank())
 

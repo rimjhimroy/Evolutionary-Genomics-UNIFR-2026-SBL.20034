@@ -8,8 +8,8 @@ In this practical, you will work with genomic SNP datasets generated from diploi
 
 Two types of genomic datasets are provided.
 
-1. ddRADseq dataset: this dataset was produced by reducing genome complexity through double-digest RAD sequencing on 64 individuals and yielded 1,127 SNPs after quality control and pruning of alleles in linkage disequilibrium (LD) > 0.2.
-2. Whole-genome sequencing dataset: this dataset is based on resequencing of a subset of 48 individuals and retains 11,475 SNPs after similar filtering for quality and LD (threshold > 0.2).
+1. ddRADseq dataset: this dataset was produced by reducing genome complexity through double-digest RAD sequencing on 64 individuals and yielded 1,127 SNPs after quality control and pruning of SNPs in linkage disequilibrium, using a pairwise LD threshold such as r² > 0.2.
+2. Whole-genome sequencing dataset: this dataset is based on resequencing of a subset of 48 individuals and retains 11,475 SNPs after similar filtering for quality and LD (r² > 0.2).
 
 These datasets are used to investigate population structure, genetic differentiation, and environmental associations using a range of population genomics tools.
 
@@ -37,7 +37,7 @@ The scaffold scan targets the neighbouring populations A2G (low elevation) and A
 The practical is split into three main folders.
 
 - `Evolutionary-Genomics-UNIFR-2026-SBL.20034/practical3/scripts/`: the three tutorial scripts you open in RStudio
-- `dataset-practical3/`: the input files organised into numbered datasets
+- `dataset-tutorial3/`: the input files organised into numbered datasets
 
 
 The numbered datasets are:
@@ -206,7 +206,7 @@ writeLines(
 	c(
 		"#define NOADMIX 0           # Allow admixture",
 		"#define LINKAGE 0           # Assume independent loci",
-		"#define USEPOPINFO 0        # Unbiased clustering",
+		"#define USEPOPINFO 0        # Unsupervised clustering",
 		"#define LOCISPOP 0          # Global population info (not per-locus)",
 		"",
 		"#define INFERALPHA 1        # Infer alpha from data",
@@ -223,7 +223,7 @@ writeLines(
 )
 ```
 
-These parameters configure STRUCTURE to perform **unbiased population clustering with standard statistical outputs**. Setting `NOADMIX 0` activates the admixture model, which allows each individual to draw a proportion of their ancestry from multiple clusters. `LINKAGE 0` tells STRUCTURE to treat all loci as statistically independent, which is the correct assumption here because our input SNPs have already been LD-pruned. `USEPOPINFO 0` and `LOCISPOP 0` tell STRUCTURE to discover population structure *de novo* without being guided by metadata; the algorithm finds clusters purely from genetic similarity. `INFERALPHA 1` allows STRUCTURE to learn the Dirichlet parameter alpha from the data itself, while `FREQSCORR 1` models realistic genetic differentiation between clusters by allowing allele frequencies to vary systematically across populations. `COMPUTEPROB 1` calculates the likelihood P(data|K) required for the Evanno Delta K method to select optimal K, `PRINTNET 1` outputs pairwise genetic distances between clusters, and `PRINTQHAT 1` outputs ancestry proportions for each individual. Finally, `UPDATEFREQ 5000` specifies how often allele frequencies are updated during the MCMC chain (every 5000 steps), and `RANDOMIZE 0` ensures parameters are updated in deterministic order for reproducible results across runs, promoting convergence stability.  
+These parameters configure STRUCTURE to perform **unsupervised population clustering with standard statistical outputs**. Setting `NOADMIX 0` activates the admixture model, which allows each individual to draw a proportion of their ancestry from multiple clusters. `LINKAGE 0` tells STRUCTURE to treat all loci as statistically independent, which is the correct assumption here because our input SNPs have already been LD-pruned. `USEPOPINFO 0` and `LOCISPOP 0` tell STRUCTURE to discover population structure *de novo* without being guided by metadata; the algorithm finds clusters purely from genetic similarity. `INFERALPHA 1` allows STRUCTURE to learn the Dirichlet parameter alpha from the data itself, while `FREQSCORR 1` models realistic genetic differentiation between clusters by allowing allele frequencies to vary systematically across populations. `COMPUTEPROB 1` calculates the likelihood P(data|K), StructureHarvester later uses these values across replicate runs and K values to calculate Evanno’s ΔK statistic, `PRINTNET 1` outputs pairwise genetic distances between clusters, and `PRINTQHAT 1` outputs ancestry proportions for each individual. Finally, `UPDATEFREQ 5000` controls how frequently STRUCTURE prints progress updates during the run (every 5000 steps), and `RANDOMIZE 0` ensures parameters are updated in deterministic order for reproducible results across runs, promoting convergence stability.  
 
 Make a folder for the test outputs:
 
@@ -241,20 +241,27 @@ setwd(small_run_dir)
 mainparams_file <- "mainparams"
 extraparams_file <- "extraparams"
 small_runs_dir <- "small_structure_runs"
+small_logs_dir <- file.path(small_runs_dir, "logs")
 
 jobs <- expand.grid(K = 1:4, REP = 1:3)
+
+dir.create(small_logs_dir, showWarnings = FALSE)
 
 parallel::mclapply(
 	seq_len(nrow(jobs)),
 	function(i) {
+		output_prefix <- file.path(small_runs_dir, sprintf("run_K%d_rep%d", jobs$K[i], jobs$REP[i]))
+		log_file <- file.path(small_logs_dir, sprintf("run_K%d_rep%d.log", jobs$K[i], jobs$REP[i]))
+
 		system(
 			sprintf(
-				"structure -K %d -m %s -e %s -o %s",
+				"structure -K %d -m %s -e %s -o %s > %s 2>&1",
 				jobs$K[i],
-				shQuote(mainparams_file),
-				shQuote(extraparams_file),
-				shQuote(file.path(small_runs_dir, sprintf("run_K%d_rep%d", jobs$K[i], jobs$REP[i])))
-			), intern = TRUE
+				mainparams_file,
+				extraparams_file,
+				shQuote(output_prefix),
+				shQuote(log_file)
+			), intern = FALSE
 		)
 	},
 	mc.cores = 4
@@ -284,7 +291,7 @@ The small run is only there so you understand what a STRUCTURE command looks lik
 
 In the previous steps, you ran STRUCTURE using a smaller number of replicates, with relatively short burnin and MCMC lengths. This was meant to help you understand how the software works and to check that everything runs correctly. However, to obtain reliable and robust results, STRUCTURE should be run for
 more replicates and with longer chains.  
-To save time, weʼve already done this for you: we ran STRUCTURE with 10 independent chains for each K value from K = 1 to K = 6, using a burn-in period of 100,000 iterations followed by 1,000,000 MCMC iterations. You can now use these precomputed STRUCTURE outputs to carry out the final steps of your analysis.  
+To save time, we have already done this for you: we ran STRUCTURE with 10 independent chains for each K value from K = 1 to K = 6, using a burn-in period of 100,000 iterations followed by 1,000,000 MCMC iterations. You can now use these precomputed STRUCTURE outputs to carry out the final steps of your analysis.  
 
 The real analysis runs are already provided in:
 
@@ -401,12 +408,12 @@ Now open the plotting script in RStudio:
 
 ### What the plotting script does
 
-The script does not rerun STRUCTURE. Instead, it reads the summary files you already prepared with StructureHarvester and CLUMPP, then turns them into figures.
+The script reads the summary files you already prepared with StructureHarvester and CLUMPP, then turns them into figures.
 
 It will:
 
-- read the Evanno summary for `K = 1` to `K = 6`
-- decide which value of `K` is best supported
+- read the likelihood summary for K = 1 to K = 6 and inspect Evanno’s ΔK for K values where it is defined
+- decide which value of `K` is best supported. **PLEASE CHOOSE THIS VALUE CAREFULLY as 5 is used here as an example. You will need to overwrite your chosen value of `K` into the `best_k` chunk of the notebook.**
 - read the aligned CLUMPP membership coefficients for the `K` you chose
 - plot the population locations and show the mean admixture proportions for each population
 - combine those ancestry coefficients with the sample coordinates
@@ -426,20 +433,20 @@ The script writes to `outputs/01-structure-ddrad/` and creates:
 - `population_sampling_map.png`
 - `structure_model_choice.png`
 - `structure_evanno_summary.tsv`
-- `structure_k8_membership.tsv` if you set `best_k <- 8`
-- `structure_k8_barplot.png` if you set `best_k <- 8`
+- `structure_k5_membership.tsv` if you set `best_k <- 5`
+- `structure_k5_barplot.png` if you set `best_k <- 5`
 
 ### How to read the figures
 
 - `population_sampling_map.png`: shows the six population coordinates over a Switzerland reference map, with a pie chart for the mean ancestry proportion of each population
 - `structure_model_choice.png`: shows how support changes across values of `K`; inspect this first, then write your chosen value into the `best_k` chunk of the notebook
-- `structure_k8_barplot.png`: each bar is one individual; the colored fractions show the estimated ancestry membership in each cluster when `best_k <- 8`
+- `structure_k5_barplot.png`: each bar is one individual; coloured segments represent estimated ancestry proportions assigned to each inferred cluster when `best_k <- 5`
 
 ### Questions to think about
 1. Describe the observed spatial genetic structure based on your analysis of ddRADseq data.
 2. How do field populations relate to genetically-delineated populations?
 3. Are genetic clusters geographically consistent?
-4. Explain the pattern observed in the North of the Alps (e.g. field population V2BEU)?
+4. Explain the pattern observed in the North of the Alps (e.g. field population V2B)?
 5. Which populations appear genetically homogeneous?
 6. Does the spatial arrangement of populations help explain the ancestry pattern?
 
@@ -448,7 +455,7 @@ The script writes to `outputs/01-structure-ddrad/` and creates:
 
 Dataset folder:
 
-`dataset-practical3/02-ddrad-wgs-population-comparison/`
+`dataset-tutorial3/02-ddrad-wgs-population-comparison/`
 
 Script:
 
@@ -456,7 +463,7 @@ Script:
 
 ### What this script does
 
-This script asks whether ddRAD and WGS tell the same broad biological story.
+This script asks whether ddRAD and WGS tell the same broad biological story. Differences between ddRAD and WGS may reflect marker density, missing data, or genomic distribution of markers, not only biological differences.
 
 It does this in three ways:
 
@@ -470,7 +477,6 @@ It does this in three ways:
 The script writes to `outputs/02-ddrad-wgs-population-comparison/` and creates:
 
 - `pca_overview.png`
-- `pca_population_centroids.png`
 - `pairwise_fst_heatmaps.png`
 - `ddrad_vs_wgs_fst_correlation.png`
 - `ddrad_vs_wgs_fst_pairs.tsv`
@@ -486,7 +492,6 @@ The script writes to `outputs/02-ddrad-wgs-population-comparison/` and creates:
 ### How to read the figures
 
 - `pca_overview.png`: each point is one individual; compare whether ddRAD and WGS separate the populations in similar ways
-- `pca_population_centroids.png`: the larger cross-shaped marks show the average PCA position of each population, which makes the population-level pattern easier to read
 - `pairwise_fst_heatmaps.png`: darker values mean stronger genetic differentiation between populations
 - `ddrad_vs_wgs_fst_correlation.png`: asks whether the two marker systems rank pairwise population differentiation similarly
 - `mantel_relationships.png`: each point is one pair of populations; the plots ask whether distance or elevation contrast is associated with stronger differentiation
@@ -503,7 +508,7 @@ The script writes to `outputs/02-ddrad-wgs-population-comparison/` and creates:
 
 Dataset folder:
 
-`dataset-practical3/03-scaffold1-window-scan/`
+`dataset-tutorial3/03-scaffold1-window-scan/`
 
 Script:
 
@@ -518,7 +523,6 @@ It calculates:
 - sliding-window `Fst`
 - within-population nucleotide diversity (`pi`)
 - between-population divergence (`Dxy`)
-- Tajima's D for each population and for the combined dataset
 
 ### Expected outputs
 
@@ -534,6 +538,5 @@ The script writes to `outputs/03-scaffold1-window-scan/` and creates:
 ### Questions to think about
 
 1. Are the major `Fst` peaks shared between ddRAD and WGS?
-2. Do those peaks coincide with low `pi`, high `Dxy`, both, or neither?
-3. Does WGS reveal a clearer pattern than ddRAD?
+2. Does WGS reveal a clearer pattern than ddRAD?
 

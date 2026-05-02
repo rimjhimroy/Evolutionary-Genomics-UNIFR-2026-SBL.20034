@@ -81,7 +81,7 @@ delta_plot <- ggplot(evanno, aes(x = k, y = delta_k)) +
         geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey70") +
         geom_col(width = 0.75, fill = "#E76F51", na.rm = TRUE) +
         scale_x_continuous(breaks = evanno$k) +
-        labs(title = "Use this panel to choose the best K", x = "K", y = "Delta K") +
+        labs(title = "Use this panel to guide your choice of K", x = "K", y = "Delta K") +
         theme_minimal(base_size = 11)
 
 model_choice_plot <- cowplot::plot_grid(
@@ -109,7 +109,7 @@ After inspecting the model-choice figure, replace the value below with the `K` y
 
 ```{r choose-best-k}
 # After looking at the model-choice figure above, replace 4 with the K you think is best.
-best_k <- 8 # <- REPLACE THIS NUMBER WITH YOUR CHOICE
+best_k <- 5 # <- REPLACE THIS NUMBER WITH YOUR CHOICE
 
 best_k
 ```
@@ -170,7 +170,7 @@ head(membership_long)
 
 ## Plot individual ancestry
 
-Each bar is one individual. The colored fractions show the estimated ancestry membership in each cluster for your chosen `K`.
+Each bar is one individual. The coloured segments show each individual’s estimated ancestry proportion assigned to each inferred cluster.
 
 ```{r ancestry-barplot, fig.width=12, fig.height=5}
 ancestry_barplot <- ggplot(membership_long, aes(x = ind, y = value, fill = cluster)) +
