@@ -10,7 +10,7 @@
 #   - npstat        (pool-seq summary statistics, compiled from source)
 #
 # A lightweight micromamba environment (tools/env2) is created to supply
-# samtools, bwa, OpenJDK, GSL (to compile npstat), and Perl + cpanm
+# samtools, bwa, OpenJDK, GSL (to compile npstat), and Perl + cpanm + perl-doc
 # (needed by popoolation2).
 #
 # After running this script, source tools/env_practical2.sh (or restart your
@@ -74,7 +74,7 @@ ensure_env2() {
   log "Creating conda environment env2 in $ENV_PREFIX"
   "$MAMBA_BIN" create -y -p "$ENV_PREFIX" \
     -c conda-forge -c bioconda \
-    samtools bwa openjdk gsl perl perl-app-cpanminus
+    samtools bwa openjdk gsl perl perl-app-cpanminus perl-doc
 }
 
 # ---------------------------------------------------------------------------

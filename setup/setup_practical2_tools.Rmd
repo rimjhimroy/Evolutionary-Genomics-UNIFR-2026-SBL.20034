@@ -84,7 +84,7 @@ is safe and will skip steps that have already been completed.
 It will:
 
 1. Download **micromamba** (a tiny conda package manager) into `tools/.micromamba/`
-2. Create a local conda environment `tools/env2/` with **samtools**, **bwa**, **OpenJDK**, GSL, and Perl
+2. Create a local conda environment `tools/env2/` with **samtools**, **bwa**, **OpenJDK**, GSL, Perl, and **perl-doc**
 3. Clone and **compile** `npstat`
 4. Download and unpack `popoolation2`
 5. Write wrapper scripts into `tools/bin/`
