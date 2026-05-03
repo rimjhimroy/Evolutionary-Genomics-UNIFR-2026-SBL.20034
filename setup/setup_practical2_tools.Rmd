@@ -74,18 +74,21 @@ Sys.setenv(
 
 r_pkgs <- c(
   "car",
-  "poolfstat",
-  "vcfR",
-  "tidyverse",
-  "data.table",
-  "locfit"
+  "poolfstat"
 )
 
 missing_pkgs <- r_pkgs[!vapply(r_pkgs, requireNamespace, logical(1), quietly = TRUE)]
 
 if (length(missing_pkgs) > 0) {
   message("Installing missing R packages: ", paste(missing_pkgs, collapse = ", "))
-  install.packages(missing_pkgs, repos = "https://cloud.r-project.org")
+  if (!requireNamespace("renv", quietly = TRUE)) {
+    install.packages("renv", repos = "https://cloud.r-project.org")
+  }
+  renv::consent(provided = TRUE)
+  if (!file.exists(file.path(repo_root, "renv", "activate.R"))) {
+    renv::init(project = repo_root, bare = TRUE, restart = FALSE)
+  }
+  renv::install(missing_pkgs, project = repo_root)
 } else {
   message("All R packages already installed.")
 }
