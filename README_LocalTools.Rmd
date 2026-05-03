@@ -1,0 +1,109 @@
+# Local Tool Installation for All Practicals
+
+This R Markdown guide installs a shared local tool stack for the whole workspace.
+
+The installer writes everything under:
+
+- `tools/`
+
+This shared folder can then be used by `practical2`, `practical3`, and `practical4`.
+
+The installer downloads or prepares these tools:
+
+- `popoolation2`
+- `npstat`
+- `structure`
+- `CLUMPP`
+- `structureHarvester`
+
+It also creates a local runtime environment under `tools/env` and wrapper commands under `tools/bin`.
+
+`structure` is installed from the Bioconda package `bioconda::structure` into `tools/env`.
+
+## Setup
+
+Run this first chunk to point R to the workspace root.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+repo_root <- normalizePath(getwd(), winslash = "/", mustWork = TRUE)
+installer <- file.path(repo_root, "install_local_tools.sh")
+tools_dir <- file.path(repo_root, "tools")
+bin_dir <- file.path(tools_dir, "bin")
+env_lib_dir <- file.path(tools_dir, "env", "lib")
+perl5_dir <- file.path(tools_dir, "perl5", "lib", "perl5")
+```
+
+If you opened this file from a subfolder project instead of the workspace root, reset `repo_root` manually before running the installer.
+
+```{r, eval=FALSE}
+repo_root <- "/home/rstudio/work/Evolutionary-Genomics-UNIFR-2026-SBL.20034"
+installer <- file.path(repo_root, "install_local_tools.sh")
+tools_dir <- file.path(repo_root, "tools")
+bin_dir <- file.path(tools_dir, "bin")
+env_lib_dir <- file.path(tools_dir, "env", "lib")
+perl5_dir <- file.path(tools_dir, "perl5", "lib", "perl5")
+```
+
+## Run the Installer
+
+This calls the shared installer at the workspace root.
+
+```{r install-tools, eval=FALSE}
+stopifnot(file.exists(installer))
+system2("bash", installer)
+```
+
+## Expose the Tools in RStudio
+
+After installation, set the runtime environment for the current R session.
+
+```{r set-env, eval=FALSE}
+Sys.setenv(
+  PATH = paste(bin_dir, Sys.getenv("PATH"), sep = ":"),
+  LD_LIBRARY_PATH = paste(env_lib_dir, Sys.getenv("LD_LIBRARY_PATH"), sep = ":"),
+  PERL5LIB = paste(perl5_dir, Sys.getenv("PERL5LIB"), sep = ":")
+)
+```
+
+## Quick Checks
+
+Use these commands to verify that the wrappers are visible from the R session.
+
+```{r verify-tools, eval=FALSE}
+system("which npstat")
+system("which structure")
+system("which CLUMPP")
+system("which structureHarvester")
+system("which fst-sliding.pl")
+```
+
+You can also inspect the installed tool tree.
+
+```{r inspect-files, eval=FALSE}
+list.files(tools_dir)
+list.files(bin_dir)
+```
+
+## Important Note About STRUCTURE
+
+`structure` is installed from Bioconda into the shared local environment.
+
+The wrapper in `tools/bin/structure` runs the executable from `tools/env/bin/structure`.
+
+So:
+
+- `npstat`, `popoolation2`, `CLUMPP`, `structureHarvester`, and `structure` are all managed from the shared local setup
+
+If `structure` fails, check whether the local micromamba environment finished installing successfully.
+
+## Example From a Practical Rmd
+
+If you want to call the shared installer from another practical notebook, the pattern is:
+
+```{r example-from-practical, eval=FALSE}
+system2("bash", "../install_local_tools.sh")
+Sys.setenv(
+  PATH = paste("../tools/bin", Sys.getenv("PATH"), sep = ":")
+)
+```
