@@ -1,0 +1,38 @@
+---
+title: "Practical 2 Tools"
+output: html_document
+---
+
+## Introduction
+
+The aim of this practical is to provide an overview of the tools that will be used in the course, including installation and usage instructions.
+
+## Tools Overview
+
+1. **Tool A**: Description and usage.
+2. **Tool B**: Description and usage.
+3. **Tool C**: Description and usage.
+
+## Installation Instructions
+
+```{r}
+# Install Tool A
+install.packages('ToolA')
+
+# Install Tool B
+install.packages('ToolB')
+```
+
+## Usage Instructions
+
+```{r}
+# Load Tool A
+library(ToolA)
+
+# Load Tool B
+library(ToolB)
+```
+
+## Conclusion
+
+In this practical, you have learned about the essential tools for the course. Make sure to install them properly before proceeding to the next practical.
