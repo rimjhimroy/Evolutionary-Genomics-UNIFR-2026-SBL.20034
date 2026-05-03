@@ -88,7 +88,7 @@ if (length(missing_pkgs) > 0) {
   if (!file.exists(file.path(repo_root, "renv", "activate.R"))) {
     renv::init(project = repo_root, bare = TRUE, restart = FALSE)
   }
-  renv::install(missing_pkgs, project = repo_root)
+  renv::install(missing_pkgs, project = repo_root, prompt = FALSE)
 } else {
   message("All R packages already installed.")
 }
