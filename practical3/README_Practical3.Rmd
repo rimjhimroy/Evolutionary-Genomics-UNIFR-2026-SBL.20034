@@ -269,7 +269,7 @@ Inspect the output files:
 system("ls /home/rstudio/work/outputs/01-structure-ddrad/small_structure_example/small_structure_runs")
 ```
 
-You should see files ending in `_f` and `_q`.  
+You should see files ending in `_f`.  
 The `_f` file is the full STRUCTURE output for one run, including run settings, likelihood values, and the detailed ancestry report for each individual. You can open one `_f` file and look for the corresponding section headings, such as  `Overall proportion of membership`, `Estimated Ln Prob of Data`, `Inferred ancestry of individuals`, `Allele-freq. divergence among pops`, and `Average distances`.  
 
 
