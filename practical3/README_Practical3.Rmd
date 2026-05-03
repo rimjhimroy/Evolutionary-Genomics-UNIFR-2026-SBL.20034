@@ -205,25 +205,13 @@ small_run_dir <- "/home/rstudio/work/outputs/01-structure-ddrad/small_structure_
 writeLines(
 	c(
 		"#define NOADMIX 0           # Allow admixture",
-		"#define LINKAGE 0           # Assume independent loci",
-		"#define USEPOPINFO 0        # Unsupervised clustering",
-		"#define LOCISPOP 0          # Global population info (not per-locus)",
-		"",
-		"#define INFERALPHA 1        # Infer alpha from data",
-		"#define FREQSCORR 1         # Model allele frequency correlation",
-		"",
-		"#define COMPUTEPROB 1       # Enable Evanno K selection",
-		"#define PRINTNET 1          # Output net distances",
-		"#define PRINTQHAT 1         # Output ancestry proportions",
-		"",
-		"#define UPDATEFREQ 5000     # Output frequency",
-		"#define RANDOMIZE 0         # Deterministic parameter updates"
+		"#define LOCISPOP 0          # Global population info (not per-locus)"
 	),
 	con = file.path(small_run_dir, "extraparams")
 )
 ```
 
-These parameters configure STRUCTURE to perform **unsupervised population clustering with ancestry coefficients, model likelihood and statistical outputs**. Setting `NOADMIX 0` activates the admixture model, which allows each individual to draw a proportion of their ancestry from multiple clusters. `LINKAGE 0` tells STRUCTURE to treat all loci as statistically independent, which is the correct assumption here because our input SNPs have already been LD-pruned. `USEPOPINFO 0` and `LOCISPOP 0` tell STRUCTURE to discover population structure *de novo* without being guided by metadata; the algorithm finds clusters purely from genetic similarity. `INFERALPHA 1` allows STRUCTURE to learn the Dirichlet parameter alpha from the data itself, while `FREQSCORR 1` models realistic genetic differentiation between clusters by allowing allele frequencies to vary systematically across populations. `COMPUTEPROB 1` calculates the likelihood P(data|K), StructureHarvester later uses these values across replicate runs and K values to calculate Evanno’s ΔK statistic, `PRINTNET 1` outputs pairwise genetic distances between clusters, and `PRINTQHAT 1` outputs ancestry proportions for each individual. Finally, `UPDATEFREQ 5000` controls how frequently STRUCTURE prints progress updates during the run (every 5000 steps), and `RANDOMIZE 0` ensures parameters are updated in deterministic order for reproducible results across runs, promoting convergence stability.  
+These parameters configure STRUCTURE to perform **unsupervised population clustering with ancestry coefficients, model likelihood and statistical outputs**. Setting `NOADMIX 0` activates the admixture model, which allows each individual to draw a proportion of their ancestry from multiple clusters.  `LOCISPOP 0` tell STRUCTURE to discover population structure *de novo* without being guided by metadata; the algorithm finds clusters purely from genetic similarity.
 
 Make a folder for the test outputs:
 
@@ -282,8 +270,8 @@ system("ls /home/rstudio/work/outputs/01-structure-ddrad/small_structure_example
 ```
 
 You should see files ending in `_f` and `_q`.  
-The `_f` file is the full STRUCTURE output for one run, including run settings, likelihood values, and the detailed ancestry report for each individual. The `_f` file also reports summary statistics that help describe the clustering result in more detail. These include values that show how different the inferred clusters are from one another, how much genetic variation is found within each cluster, and how strongly each cluster is genetically differentiated. You can open one `_f` file and look for the corresponding section headings, such as  `Overall proportion of membership`, `Estimated Ln Prob of Data`, `Inferred ancestry of individuals`, `Allele-freq. divergence among pops`, `Average distances`, and `Mean value of Fst`.  
-The `_q` file is the corresponding ancestry-coefficient table, with one line per individual and the estimated proportion of membership in each inferred cluster or the Q values.  
+The `_f` file is the full STRUCTURE output for one run, including run settings, likelihood values, and the detailed ancestry report for each individual. You can open one `_f` file and look for the corresponding section headings, such as  `Overall proportion of membership`, `Estimated Ln Prob of Data`, `Inferred ancestry of individuals`, `Allele-freq. divergence among pops`, and `Average distances`.  
+
 
 At this point, stop using the small run for downstream analysis.
 
