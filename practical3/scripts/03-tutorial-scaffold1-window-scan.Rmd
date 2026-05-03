@@ -443,8 +443,8 @@ legend(
 
 This final chunk keeps the same two-panel comparison, but now each panel overlays $F_{ST}$, $pi$, and Dxy.
 
-```{r compare-plots, fig.width=9, fig.height=7}
-old_par <- par(mfrow = c(1, 2))
+```{r compare-plots, fig.width=9, fig.height=15}
+old_par <- par(mfrow = c(2, 1))
 
 plot(
   wgs_stats$fst,
