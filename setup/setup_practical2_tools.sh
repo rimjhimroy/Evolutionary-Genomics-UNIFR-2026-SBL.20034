@@ -3,12 +3,15 @@
 # setup_practical2_tools.sh
 #
 # Installs the command-line tools needed for Practical 2:
+#   - samtools      (SAM/BAM manipulation)
+#   - bwa           (short-read alignment)
+#   - java          (OpenJDK – required by popoolation2 .jar utilities)
 #   - popoolation2  (pool-seq FST / sliding-window analyses)
 #   - npstat        (pool-seq summary statistics, compiled from source)
 #
-# A lightweight micromamba environment (tools/env2) is created to supply the
-# GSL headers/libs required to compile npstat and the Perl runtime + cpanm
-# needed by popoolation2.
+# A lightweight micromamba environment (tools/env2) is created to supply
+# samtools, bwa, OpenJDK, GSL (to compile npstat), and Perl + cpanm
+# (needed by popoolation2).
 #
 # After running this script, source tools/env_practical2.sh (or restart your
 # shell / RStudio session) to add the wrappers to your PATH.
@@ -58,7 +61,9 @@ install_micromamba() {
 }
 
 # ---------------------------------------------------------------------------
-# 2. Conda environment – GSL + Perl (needed to compile npstat / run popoolation2)
+# 2. Conda environment – samtools, bwa, OpenJDK, GSL + Perl
+#    (samtools/bwa for alignment; java for popoolation2 jars;
+#     GSL to compile npstat; Perl + cpanm for popoolation2 scripts)
 # ---------------------------------------------------------------------------
 ensure_env2() {
   install_micromamba
@@ -68,8 +73,8 @@ ensure_env2() {
   fi
   log "Creating conda environment env2 in $ENV_PREFIX"
   "$MAMBA_BIN" create -y -p "$ENV_PREFIX" \
-    -c conda-forge \
-    gsl perl perl-app-cpanminus
+    -c conda-forge -c bioconda \
+    samtools bwa openjdk gsl perl perl-app-cpanminus
 }
 
 # ---------------------------------------------------------------------------
@@ -245,6 +250,9 @@ main() {
   install_startup_hooks
 
   log "Done. Tools installed under $TOOLS_DIR"
+  log "  samtools      →  $ENV_PREFIX/bin/samtools  (on PATH via env_practical2.sh)"
+  log "  bwa           →  $ENV_PREFIX/bin/bwa        (on PATH via env_practical2.sh)"
+  log "  java          →  $ENV_PREFIX/bin/java        (on PATH via env_practical2.sh)"
   log "  popoolation2  →  $(ls "$TOOLS_DIR/popoolation2/popoolation2_1201/"*.pl 2>/dev/null | wc -l) .pl scripts wrapped in $BIN_DIR"
   log "  npstat        →  $BIN_DIR/npstat"
   log ""

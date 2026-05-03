@@ -1,6 +1,6 @@
 ---
 title: "Setup – Practical 2 Tools"
-subtitle: "car · poolfstat · npstat · popoolation2"
+subtitle: "car · poolfstat · samtools · bwa · java · npstat · popoolation2"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -17,6 +17,9 @@ This notebook installs everything you need for **Practical 2**:
 |------|------|---------|
 | `car` | R package | Companion to Applied Regression – linear models / ANOVA |
 | `poolfstat` | R package | Pool-seq FST and differentiation statistics |
+| `samtools` | CLI (conda) | SAM/BAM sorting, indexing, and manipulation |
+| `bwa` | CLI (conda) | Short-read alignment (BWA-MEM) |
+| `java` | CLI (conda, OpenJDK) | Java runtime – required by popoolation2 `.jar` utilities |
 | `npstat` | CLI (compiled C) | Summary statistics from pool-seq data |
 | `popoolation2` | CLI (Perl) | Sliding-window FST on Pool-seq data |
 
@@ -81,7 +84,7 @@ is safe and will skip steps that have already been completed.
 It will:
 
 1. Download **micromamba** (a tiny conda package manager) into `tools/.micromamba/`
-2. Create a local conda environment `tools/env2/` with GSL and Perl
+2. Create a local conda environment `tools/env2/` with **samtools**, **bwa**, **OpenJDK**, GSL, and Perl
 3. Clone and **compile** `npstat`
 4. Download and unpack `popoolation2`
 5. Write wrapper scripts into `tools/bin/`
@@ -155,6 +158,9 @@ Run these checks to confirm every tool is accessible from the R session.
 
 ```{r verify-cli, eval=FALSE}
 tools_to_check <- c(
+  "samtools",
+  "bwa",
+  "java",
   "npstat",
   "fst-sliding.pl",
   "Variance-sliding.pl",
@@ -170,6 +176,21 @@ for (t in tools_to_check) {
     cat(sprintf("  %-30s  NOT FOUND\n", t))
   }
 }
+```
+
+```{r verify-samtools, eval=FALSE}
+cat("\n--- samtools version ---\n")
+system("samtools --version 2>&1 | head -2")
+```
+
+```{r verify-bwa, eval=FALSE}
+cat("\n--- bwa version ---\n")
+system("bwa 2>&1 | head -3")
+```
+
+```{r verify-java, eval=FALSE}
+cat("\n--- java version ---\n")
+system("java -version 2>&1")
 ```
 
 ```{r verify-npstat, eval=FALSE}
