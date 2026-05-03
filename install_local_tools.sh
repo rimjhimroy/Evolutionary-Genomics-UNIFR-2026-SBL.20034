@@ -182,6 +182,51 @@ export PERL5LIB=\"\$tool_dir/perl5/lib/perl5\${PERL5LIB:+:\$PERL5LIB}\""
   chmod 0755 "$TOOLS_DIR/env.sh"
 }
 
+upsert_block() {
+  local target="$1"
+  local marker="$2"
+  local content="$3"
+  local start="# >>> $marker >>>"
+  local end="# <<< $marker <<<"
+
+  mkdir -p "$(dirname "$target")"
+  touch "$target"
+
+  if grep -Fq "$start" "$target"; then
+    awk -v start="$start" -v end="$end" -v replacement="$content" '
+      BEGIN { inside = 0 }
+      $0 == start {
+        print start
+        print replacement
+        print end
+        inside = 1
+        next
+      }
+      $0 == end {
+        inside = 0
+        next
+      }
+      !inside { print }
+    ' "$target" > "$target.tmp"
+    mv "$target.tmp" "$target"
+  else
+    {
+      printf '\n%s\n' "$start"
+      printf '%s\n' "$content"
+      printf '%s\n' "$end"
+    } >> "$target"
+  fi
+}
+
+install_startup_hooks() {
+  local shell_block="if [ -f \"$TOOLS_DIR/env.sh\" ]; then\n  . \"$TOOLS_DIR/env.sh\"\nfi"
+  local renviron_block="PATH=${BIN_DIR}:${ENV_PREFIX}/bin:${PATH}\nLD_LIBRARY_PATH=${ENV_PREFIX}/lib:${LD_LIBRARY_PATH}\nPERL5LIB=${PERL5_DIR}/lib/perl5:${PERL5LIB}"
+
+  upsert_block "$HOME/.bashrc" "EVO_LOCAL_TOOLS" "$shell_block"
+  upsert_block "$HOME/.profile" "EVO_LOCAL_TOOLS" "$shell_block"
+  upsert_block "$HOME/.Renviron" "EVO_LOCAL_TOOLS" "$renviron_block"
+}
+
 main() {
   require_cmd bash
   require_cmd curl
@@ -201,10 +246,11 @@ main() {
   install_structure_harvester
   write_wrapper_scripts
   write_env_script
+  install_startup_hooks
 
   log "Local tools installed under $TOOLS_DIR"
-  log "From Rmd, use Sys.setenv(PATH = paste('$BIN_DIR', Sys.getenv('PATH'), sep = ':'), LD_LIBRARY_PATH = paste('$ENV_PREFIX/lib', Sys.getenv('LD_LIBRARY_PATH'), sep = ':'), PERL5LIB = paste('$PERL5_DIR/lib/perl5', Sys.getenv('PERL5LIB'), sep = ':'))"
-  log "Or in a shell: source $TOOLS_DIR/env.sh"
+  log "Added startup hooks to ~/.bashrc, ~/.profile, and ~/.Renviron"
+  log "For the current shell, run: source $TOOLS_DIR/env.sh"
 }
 
 main "$@"
