@@ -1,0 +1,23 @@
+---
+title: "Practical 3 Tools"
+author: "Author Name"
+date: "2026-05-03"
+output:
+  html_document:
+    keep_md: true
+---
+
+## Introduction
+
+This is the R Markdown document for Practical 3 Tools.
+
+## Code Examples
+
+```{r}
+# Example R code here
+summary(cars)
+```
+
+## Conclusion
+
+In this document, we discussed the tools used in Practical 3.
