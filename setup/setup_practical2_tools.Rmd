@@ -1,38 +1,224 @@
 ---
-title: "Practical 2 Tools"
-output: html_document
+title: "Setup – Practical 2 Tools"
+subtitle: "car · poolfstat · npstat · popoolation2"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
 ---
 
-## Introduction
+## Overview
 
-The aim of this practical is to provide an overview of the tools that will be used in the course, including installation and usage instructions.
+This notebook installs everything you need for **Practical 2**:
 
-## Tools Overview
+| Tool | Type | Purpose |
+|------|------|---------|
+| `car` | R package | Companion to Applied Regression – linear models / ANOVA |
+| `poolfstat` | R package | Pool-seq FST and differentiation statistics |
+| `npstat` | CLI (compiled C) | Summary statistics from pool-seq data |
+| `popoolation2` | CLI (Perl) | Sliding-window FST on Pool-seq data |
 
-1. **Tool A**: Description and usage.
-2. **Tool B**: Description and usage.
-3. **Tool C**: Description and usage.
+The CLI tools (`npstat` and `popoolation2`) are installed into
+`<repo_root>/tools/bin/` and a small convenience script
+`tools/env_practical2.sh` is generated so you can activate them any time
+by running `source tools/env_practical2.sh`.
 
-## Installation Instructions
+> **Tip:** Run this notebook **once** from the repository root in RStudio.
+> After that the tools are persistent – you only need to re-source the env
+> script at the start of each new session.
 
-```{r}
-# Install Tool A
-install.packages('ToolA')
+---
 
-# Install Tool B
-install.packages('ToolB')
+## 1  Locate the repository root
+
+The chunk below detects the repo root automatically.  If RStudio opened a
+*sub-folder* project instead of the workspace root, set `repo_root` manually
+before running anything else.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, comment = "")
 ```
 
-## Usage Instructions
+```{r repo-root}
+# Auto-detect: walk upward from the current working directory until we find
+# the install script.  Falls back to the hard-coded Renku path.
+find_repo_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = TRUE)
+  for (i in seq_len(10)) {
+    if (file.exists(file.path(path, "setup", "setup_practical2_tools.sh"))) {
+      return(path)
+    }
+    parent <- dirname(path)
+    if (parent == path) break
+    path <- parent
+  }
+  # Fallback for Renku / standard deployment
+  "/home/rstudio/work/Evolutionary-Genomics-UNIFR-2026-SBL.20034"
+}
 
-```{r}
-# Load Tool A
-library(ToolA)
+repo_root  <- find_repo_root()
+tools_dir  <- file.path(repo_root, "tools")
+bin_dir    <- file.path(tools_dir, "bin")
+env2_dir   <- file.path(tools_dir, "env2")
+perl5_dir  <- file.path(tools_dir, "perl5", "lib", "perl5")
+installer  <- file.path(repo_root, "setup", "setup_practical2_tools.sh")
 
-# Load Tool B
-library(ToolB)
+cat("repo_root :", repo_root, "\n")
+cat("tools_dir :", tools_dir, "\n")
+cat("installer :", installer, "\n")
+stopifnot("Installer script not found – check repo_root above" = file.exists(installer))
 ```
 
-## Conclusion
+---
 
-In this practical, you have learned about the essential tools for the course. Make sure to install them properly before proceeding to the next practical.
+## 2  Run the shell installer
+
+The installer (`setup_practical2_tools.sh`) is **idempotent** – re-running it
+is safe and will skip steps that have already been completed.
+
+It will:
+
+1. Download **micromamba** (a tiny conda package manager) into `tools/.micromamba/`
+2. Create a local conda environment `tools/env2/` with GSL and Perl
+3. Clone and **compile** `npstat`
+4. Download and unpack `popoolation2`
+5. Write wrapper scripts into `tools/bin/`
+6. Generate `tools/env_practical2.sh`
+7. Add PATH hooks to `~/.bashrc`, `~/.profile`, and `~/.Renviron`
+
+```{r run-installer, eval=FALSE}
+stopifnot(file.exists(installer))
+ret <- system2("bash", installer)
+if (ret != 0L) stop("Installer exited with code ", ret, ". Check the output above.")
+cat("\nInstaller finished successfully.\n")
+```
+
+---
+
+## 3  Activate tools in the current R session
+
+After installation the tools are on disk, but the current R session still
+needs to know where to find them.  Run this chunk once per session.
+
+```{r activate-session, eval=FALSE}
+Sys.setenv(
+  PATH = paste(bin_dir,
+               file.path(env2_dir, "bin"),
+               Sys.getenv("PATH"),
+               sep = ":"),
+  LD_LIBRARY_PATH = paste(file.path(env2_dir, "lib"),
+                          Sys.getenv("LD_LIBRARY_PATH"),
+                          sep = ":"),
+  PERL5LIB = paste(perl5_dir,
+                   Sys.getenv("PERL5LIB"),
+                   sep = ":")
+)
+cat("PATH updated for this R session.\n")
+```
+
+---
+
+## 4  Install R packages
+
+The R packages are installed into your project's renv library so that they
+are available in every subsequent session without re-running this step.
+
+```{r install-r-packages, eval=FALSE}
+r_pkgs <- c(
+  # Core packages for Practical 2
+  "car",          # linear models / ANOVA companion
+  "poolfstat",    # Pool-seq FST statistics
+  # Supporting packages commonly used alongside the above
+  "vcfR",         # read/manipulate VCF files
+  "tidyverse",    # data wrangling and plotting
+  "data.table",   # fast tabular data
+  "locfit"        # local regression (used by some pool-seq analyses)
+)
+
+missing_pkgs <- r_pkgs[!vapply(r_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+
+if (length(missing_pkgs) > 0) {
+  message("Installing missing R packages: ", paste(missing_pkgs, collapse = ", "))
+  install.packages(missing_pkgs, repos = "https://cloud.r-project.org")
+} else {
+  message("All R packages already installed.")
+}
+```
+
+---
+
+## 5  Verify the installation
+
+Run these checks to confirm every tool is accessible from the R session.
+
+```{r verify-cli, eval=FALSE}
+tools_to_check <- c(
+  "npstat",
+  "fst-sliding.pl",
+  "Variance-sliding.pl",
+  "fisher-test.pl"
+)
+
+cat("--- CLI tools ---\n")
+for (t in tools_to_check) {
+  path <- Sys.which(t)
+  if (nchar(path) > 0) {
+    cat(sprintf("  %-30s  %s\n", t, path))
+  } else {
+    cat(sprintf("  %-30s  NOT FOUND\n", t))
+  }
+}
+```
+
+```{r verify-npstat, eval=FALSE}
+cat("\n--- npstat version ---\n")
+system("npstat --help 2>&1 | head -5")
+```
+
+```{r verify-popoolation2, eval=FALSE}
+cat("\n--- popoolation2 (fst-sliding.pl) ---\n")
+system("fst-sliding.pl --help 2>&1 | head -5")
+```
+
+```{r verify-r-packages, eval=FALSE}
+cat("\n--- R packages ---\n")
+for (pkg in c("car", "poolfstat")) {
+  installed <- requireNamespace(pkg, quietly = TRUE)
+  cat(sprintf("  %-15s  %s\n", pkg, if (installed) "OK" else "MISSING"))
+}
+```
+
+```{r inspect-tools-dir, eval=FALSE}
+cat("\n--- tools/bin contents ---\n")
+cat(paste(sort(list.files(bin_dir)), collapse = "\n"), "\n")
+```
+
+---
+
+## 6  Quick-start for subsequent sessions
+
+At the top of every Practical 2 notebook, add the following activation chunk
+(it is safe to run even if the environment variable was already set):
+
+```r
+# Activate Practical 2 tools
+tools_dir <- file.path(
+  "/home/rstudio/work/Evolutionary-Genomics-UNIFR-2026-SBL.20034", "tools")
+Sys.setenv(
+  PATH = paste(file.path(tools_dir, "bin"),
+               file.path(tools_dir, "env2", "bin"),
+               Sys.getenv("PATH"), sep = ":"),
+  LD_LIBRARY_PATH = paste(file.path(tools_dir, "env2", "lib"),
+                          Sys.getenv("LD_LIBRARY_PATH"), sep = ":"),
+  PERL5LIB = paste(file.path(tools_dir, "perl5", "lib", "perl5"),
+                   Sys.getenv("PERL5LIB"), sep = ":")
+)
+```
+
+Or, from the terminal / a `system()` call:
+
+```bash
+source tools/env_practical2.sh
+```

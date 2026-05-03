@@ -1,23 +1,196 @@
 ---
-title: "Practical 3 Tools"
-author: "Author Name"
-date: "2026-05-03"
+title: "Setup – Practical 3 Tools"
+subtitle: "structure · CLUMPP · structureHarvester"
+date: "`r Sys.Date()`"
 output:
   html_document:
-    keep_md: true
+    toc: true
+    toc_float: true
+    theme: flatly
 ---
 
-## Introduction
+## Overview
 
-This is the R Markdown document for Practical 3 Tools.
+This notebook installs everything you need for **Practical 3**:
 
-## Code Examples
+| Tool | Type | Purpose |
+|------|------|---------|
+| `structure` | CLI (Bioconda) | Bayesian clustering of multilocus genotypes |
+| `CLUMPP` | CLI (binary) | Aligns cluster memberships across multiple STRUCTURE runs |
+| `structureHarvester` | CLI (Python) | Extracts Δ*K* and best-*K* statistics from STRUCTURE output |
 
-```{r}
-# Example R code here
-summary(cars)
+All three tools are installed into `<repo_root>/tools/bin/` so they can be
+called from any notebook or terminal with a single `source` command.
+
+> **Tip:** Run this notebook **once** from the repository root in RStudio.
+> After that the tools are persistent – you only need to re-source the env
+> script at the start of each new session.
+
+---
+
+## 1  Locate the repository root
+
+The chunk below detects the repo root automatically.  If RStudio opened a
+*sub-folder* project instead of the workspace root, set `repo_root` manually
+before running anything else.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, comment = "")
 ```
 
-## Conclusion
+```{r repo-root}
+find_repo_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = TRUE)
+  for (i in seq_len(10)) {
+    if (file.exists(file.path(path, "setup", "setup_practical3_tools.sh"))) {
+      return(path)
+    }
+    parent <- dirname(path)
+    if (parent == path) break
+    path <- parent
+  }
+  "/home/rstudio/work/Evolutionary-Genomics-UNIFR-2026-SBL.20034"
+}
 
-In this document, we discussed the tools used in Practical 3.
+repo_root <- find_repo_root()
+tools_dir <- file.path(repo_root, "tools")
+bin_dir   <- file.path(tools_dir, "bin")
+env3_dir  <- file.path(tools_dir, "env3")
+installer <- file.path(repo_root, "setup", "setup_practical3_tools.sh")
+
+cat("repo_root :", repo_root, "\n")
+cat("tools_dir :", tools_dir, "\n")
+cat("installer :", installer, "\n")
+stopifnot("Installer script not found – check repo_root above" = file.exists(installer))
+```
+
+---
+
+## 2  Run the shell installer
+
+The installer (`setup_practical3_tools.sh`) is **idempotent** – re-running it
+is safe and will skip steps that have already been completed.
+
+It will:
+
+1. Download **micromamba** (a tiny conda package manager) into `tools/.micromamba/`
+2. Create a local conda environment `tools/env3/` with **structure** (Bioconda) and Python
+3. Download the **CLUMPP** pre-compiled Linux binary
+4. Clone **structureHarvester** from GitHub
+5. Write wrapper scripts into `tools/bin/`
+6. Generate `tools/env_practical3.sh`
+7. Add PATH hooks to `~/.bashrc`, `~/.profile`, and `~/.Renviron`
+
+```{r run-installer, eval=FALSE}
+stopifnot(file.exists(installer))
+ret <- system2("bash", installer)
+if (ret != 0L) stop("Installer exited with code ", ret, ". Check the output above.")
+cat("\nInstaller finished successfully.\n")
+```
+
+---
+
+## 3  Activate tools in the current R session
+
+After installation the tools are on disk, but the current R session still
+needs to know where to find them.  Run this chunk once per session.
+
+```{r activate-session, eval=FALSE}
+Sys.setenv(
+  PATH = paste(bin_dir,
+               file.path(env3_dir, "bin"),
+               Sys.getenv("PATH"),
+               sep = ":"),
+  LD_LIBRARY_PATH = paste(file.path(env3_dir, "lib"),
+                          Sys.getenv("LD_LIBRARY_PATH"),
+                          sep = ":")
+)
+cat("PATH updated for this R session.\n")
+```
+
+---
+
+## 4  Verify the installation
+
+Run these checks to confirm every tool is accessible.
+
+```{r verify-which, eval=FALSE}
+tools_to_check <- c("structure", "CLUMPP", "structureHarvester")
+
+cat("--- Tool locations ---\n")
+for (t in tools_to_check) {
+  path <- Sys.which(t)
+  if (nchar(path) > 0) {
+    cat(sprintf("  %-25s  %s\n", t, path))
+  } else {
+    cat(sprintf("  %-25s  NOT FOUND\n", t))
+  }
+}
+```
+
+```{r verify-structure, eval=FALSE}
+cat("\n--- structure (first line of help) ---\n")
+system("structure --help 2>&1 | head -3")
+```
+
+```{r verify-clumpp, eval=FALSE}
+cat("\n--- CLUMPP ---\n")
+system("CLUMPP --help 2>&1 | head -3")
+```
+
+```{r verify-structureharvester, eval=FALSE}
+cat("\n--- structureHarvester ---\n")
+system("structureHarvester --help 2>&1 | head -5")
+```
+
+```{r inspect-tools-dir, eval=FALSE}
+cat("\n--- tools/bin contents ---\n")
+cat(paste(sort(list.files(bin_dir)), collapse = "\n"), "\n")
+```
+
+---
+
+## 5  Quick-start for subsequent sessions
+
+At the top of every Practical 3 notebook, add the following activation chunk:
+
+```r
+# Activate Practical 3 tools
+tools_dir <- file.path(
+  "/home/rstudio/work/Evolutionary-Genomics-UNIFR-2026-SBL.20034", "tools")
+Sys.setenv(
+  PATH = paste(file.path(tools_dir, "bin"),
+               file.path(tools_dir, "env3", "bin"),
+               Sys.getenv("PATH"), sep = ":"),
+  LD_LIBRARY_PATH = paste(file.path(tools_dir, "env3", "lib"),
+                          Sys.getenv("LD_LIBRARY_PATH"), sep = ":")
+)
+```
+
+Or, from the terminal / a `system()` call:
+
+```bash
+source tools/env_practical3.sh
+```
+
+---
+
+## Notes on the tools
+
+### structure
+
+`structure` is installed from the Bioconda channel into the local conda
+environment `tools/env3`.  The wrapper at `tools/bin/structure` forwards all
+arguments to `tools/env3/bin/structure`.
+
+### CLUMPP
+
+CLUMPP is distributed as a pre-compiled 64-bit Linux binary by the Rosenberg
+lab.  It is placed directly in `tools/bin/CLUMPP`.
+
+### structureHarvester
+
+structureHarvester is a Python script cloned from
+[dentearl/structureHarvester](https://github.com/dentearl/structureHarvester).
+The wrapper at `tools/bin/structureHarvester` calls the script with the Python
+interpreter from `tools/env3`.
