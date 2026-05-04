@@ -130,14 +130,6 @@ ddrad_scores$sample_id <- ddrad_metadata$sample_id
 ddrad_scores$pop <- ddrad_metadata$pop
 ddrad_scores$elevation_level <- ddrad_metadata$elevation_level
 
-write.table(
-        ddrad_explained_variance,
-        file = file.path(output_dir, "ddrad_pca_explained_variance.tsv"),
-        sep = "\t",
-        quote = FALSE,
-        row.names = FALSE
-)
-
 ddrad_explained_variance
 ```
 
@@ -160,7 +152,6 @@ ddrad_eigenvalue_plot <- ggplot(ddrad_eigenvalue_data, aes(x = principal_compone
         labs(title = "ddRAD PCA eigenvalues", x = "Principal component", y = "Explained variance (%)") +
         theme_minimal(base_size = 11)
 
-ggsave(file.path(output_dir, "ddrad_pca_eigenvalues.png"), ddrad_eigenvalue_plot, width = 6.5, height = 4.5, dpi = 320)
 ddrad_eigenvalue_plot
 ```
 
@@ -195,22 +186,12 @@ ddrad_loading_plot_data <- data.frame(
         loading = c(ddrad_loading_matrix$PC1, ddrad_loading_matrix$PC2, ddrad_loading_matrix$PC3, ddrad_loading_matrix$PC4)
 )
 
-write.table(
-        ddrad_loading_table,
-        file = file.path(output_dir, "ddrad_pca_top_loadings.tsv"),
-        sep = "\t",
-        quote = FALSE,
-        row.names = FALSE
-)
-
 ddrad_loading_plot <- ggplot(ddrad_loading_plot_data, aes(x = marker_index, y = loading)) +
         geom_bin2d(bins = 70) +
         facet_wrap(~axis, scales = "free_y") +
         scale_fill_viridis_c(option = "C", name = "Count") +
         labs(title = "ddRAD PCA loading distributions", x = "Marker index", y = "Loading") +
         theme_minimal(base_size = 11)
-
-ggsave(file.path(output_dir, "ddrad_pca_top_loadings.png"), ddrad_loading_plot, width = 9, height = 6, dpi = 320)
 ddrad_loading_plot
 ```
 
@@ -281,7 +262,6 @@ ddrad_other_pca_plot <- cowplot::plot_grid(
         align = "hv"
 )
 
-ggsave(file.path(output_dir, "ddrad_pca_other_axes.png"), ddrad_other_pca_plot, width = 10, height = 6.5, dpi = 320)
 ddrad_other_pca_plot
 ```
 
@@ -329,14 +309,6 @@ wgs_scores$sample_id <- wgs_metadata$sample_id
 wgs_scores$pop <- wgs_metadata$pop
 wgs_scores$elevation_level <- wgs_metadata$elevation_level
 
-write.table(
-        wgs_explained_variance,
-        file = file.path(output_dir, "wgs_pca_explained_variance.tsv"),
-        sep = "\t",
-        quote = FALSE,
-        row.names = FALSE
-)
-
 wgs_explained_variance
 ```
 
@@ -359,7 +331,6 @@ wgs_eigenvalue_plot <- ggplot(wgs_eigenvalue_data, aes(x = principal_component, 
         labs(title = "WGS PCA eigenvalues", x = "Principal component", y = "Explained variance (%)") +
         theme_minimal(base_size = 11)
 
-ggsave(file.path(output_dir, "wgs_pca_eigenvalues.png"), wgs_eigenvalue_plot, width = 6.5, height = 4.5, dpi = 320)
 wgs_eigenvalue_plot
 ```
 
@@ -394,22 +365,12 @@ wgs_loading_plot_data <- data.frame(
         loading = c(wgs_loading_matrix$PC1, wgs_loading_matrix$PC2, wgs_loading_matrix$PC3, wgs_loading_matrix$PC4)
 )
 
-write.table(
-        wgs_loading_table,
-        file = file.path(output_dir, "wgs_pca_top_loadings.tsv"),
-        sep = "\t",
-        quote = FALSE,
-        row.names = FALSE
-)
-
 wgs_loading_plot <- ggplot(wgs_loading_plot_data, aes(x = marker_index, y = loading)) +
         geom_bin2d(bins = 70) +
         facet_wrap(~axis, scales = "free_y") +
         scale_fill_viridis_c(option = "C", name = "Count") +
         labs(title = "WGS PCA loading distributions", x = "Marker index", y = "Loading") +
         theme_minimal(base_size = 11)
-
-ggsave(file.path(output_dir, "wgs_pca_top_loadings.png"), wgs_loading_plot, width = 9, height = 6, dpi = 320)
 wgs_loading_plot
 ```
 
@@ -500,9 +461,6 @@ ddrad_fst <- ddrad_fst[reference_order, reference_order, drop = FALSE]
 wgs_fst <- wgs_fst[reference_order, reference_order, drop = FALSE]
 geo_matrix <- geo_matrix[reference_order, reference_order, drop = FALSE]
 
-write.table(ddrad_fst, file = file.path(output_dir, "ddrad_pairwise_fst.tsv"), sep = "\t", quote = FALSE, col.names = NA)
-write.table(wgs_fst, file = file.path(output_dir, "wgs_pairwise_fst.tsv"), sep = "\t", quote = FALSE, col.names = NA)
-
 ddrad_fst
 wgs_fst
 ```
@@ -550,7 +508,9 @@ ggsave(file.path(output_dir, "pairwise_fst_heatmaps.png"), fst_panel, width = 11
 fst_panel
 ```
 
-##  Plot ddRAD versus WGS Fst correlation
+##  Compare ddRAD and WGS pairwise Fst
+
+Here we ask whether population pairs that are highly differentiated in WGS are also highly differentiated in ddRAD. does ddRAD captures the broad population differentiation pattern as well as WGS.
 
 
 ```{r fst-correlation-table}
@@ -561,14 +521,6 @@ fst_correlation_table <- data.frame(
         ddrad_fst = ddrad_fst[lower.tri(ddrad_fst)],
         wgs_fst = wgs_fst[lower.tri(wgs_fst)],
         stringsAsFactors = FALSE
-)
-
-write.table(
-        fst_correlation_table,
-        file = file.path(output_dir, "ddrad_vs_wgs_fst_pairs.tsv"),
-        sep = "\t",
-        quote = FALSE,
-        row.names = FALSE
 )
 
 fst_correlation_test <- cor.test(fst_correlation_table$ddrad_fst, fst_correlation_table$wgs_fst)
@@ -601,16 +553,13 @@ rownames(elevation_matrix) <- elevation_table$pop
 colnames(elevation_matrix) <- elevation_table$pop
 elevation_matrix <- elevation_matrix[reference_order, reference_order, drop = FALSE]
 
-write.table(geo_matrix, file = file.path(output_dir, "geographic_distance_matrix.tsv"), sep = "\t", quote = FALSE, col.names = NA)
-write.table(elevation_matrix, file = file.path(output_dir, "elevation_distance_matrix.tsv"), sep = "\t", quote = FALSE, col.names = NA)
-
 geo_matrix
 elevation_matrix
 ```
 
 ## Test isolation by distance
 
-Run Mantel tests to ask whether geographically distant populations are also more genetically differentiated.
+A Mantel test compares two distance matrices. Here we test whether populations that are geographically farther apart also have higher genetic differentiation.
 
 ```{r ibd-tests}
 ddrad_ibd <- mantel(geo_matrix, ddrad_fst, permutations = 1000)
@@ -670,6 +619,10 @@ wgs_geo_plot <- ggplot(wgs_geo_pairs, aes(x = geographic_distance_km, y = fst)) 
 
 wgs_geo_plot
 ```
+
+## Isolation by elevation after accounting for geography
+
+This test asks whether elevation differences are associated with genetic differentiation after accounting for geographic distance. 
 
 ```{r ibe-tests}
 ddrad_ibe <- mantel.partial(ddrad_fst, elevation_matrix, geo_matrix, permutations = 1000)
