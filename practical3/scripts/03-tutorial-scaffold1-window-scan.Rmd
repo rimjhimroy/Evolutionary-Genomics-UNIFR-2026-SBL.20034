@@ -10,7 +10,7 @@ In this notebook we will calculate window-based $F_{ST}$ along scaffold 1 and co
 Interpretation guide:
 
 - Higher $F_{ST}$ means stronger genetic differentiation between the two populations in that window.
-- FST peaks are candidate regions of elevated relative differentiation, but they can also arise from low within-population diversity, reduced recombination, background selection, local variation in SNP density, or demographic history.
+- FST peaks are candidate regions of elevated relative differentiation, but they can also arise from low within-population diversity, reduced recombination, local variation in SNP density, or demographic history.
 - ddRAD and WGS will not match perfectly because ddRAD samples only a subset of sites, but broad peaks can still be compared.
 
 ## Setup
@@ -24,7 +24,6 @@ knitr::opts_knit$set(root.dir = "/home/rstudio/work")
 
 ## Load packages
 
-We only need three packages: one for population-genetic calculations, one for plotting, and one for reading VCF files.
 
 ```{r libraries}
 library("PopGenome")
@@ -177,10 +176,10 @@ head(ddrad_fst)
 
 Now plot the ddRAD window summary so you can see where $F_{ST}$, $pi$, and Dxy rise and fall along scaffold 1.
 
-```{r ddrad-plot, fig.width=9, fig.height=4}
+```{r ddrad-plot, fig.width=9, fig.height=6}
 ddrad_plot_file <- file.path(output_dir, "ddrad_scaffold1_fst.png")
 
-png(ddrad_plot_file, width = 9, height = 4, units = "in", res = 320)
+png(ddrad_plot_file, width = 9, height = 6, units = "in", res = 320)
 plot(
   ddrad_stats$midpoint_mb,
   ddrad_stats$fst,
@@ -310,10 +309,10 @@ head(wgs_fst)
 
 Now plot the WGS window summary to compare the positions of peaks and troughs along the same scaffold.
 
-```{r wgs-plot, fig.width=9, fig.height=4}
+```{r wgs-plot, fig.width=9, fig.height=6}
 wgs_plot_file <- file.path(output_dir, "wgs_scaffold1_fst.png")
 
-png(wgs_plot_file, width = 9, height = 4, units = "in", res = 320)
+png(wgs_plot_file, width = 9, height = 6, units = "in", res = 320)
 plot(
   wgs_stats$midpoint_mb,
   wgs_stats$fst,
