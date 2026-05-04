@@ -157,21 +157,18 @@ ddrad_eigenvalue_plot
 
 ## Plot ddRAD loadings
 
-This plot shows the full distribution of ddRAD marker loadings across the first four PCA axes. Dense horizontal bands near zero mean that most markers contribute weakly, whereas isolated vertical spikes indicate a smaller number of especially influential markers. The exported top-loading table lists the 20 markers with the strongest absolute contributions on the first two axes.
+This plot shows the ddRAD marker loadings for the first two PCA axes. Values far from zero mark loci that contribute more strongly to that axis. The loading table lists the 20 markers with the strongest absolute contributions on PC1 and PC2.
 
-Question: Do the first ddRAD axes look driven by a few concentrated loading peaks, or by many markers with modest effects?
 
 ```{r ddrad-loadings, fig.width=9, fig.height=6}
-ddrad_loading_matrix <- as.data.frame(ddrad_pca$loadings[, 1:4, drop = FALSE])
+ddrad_loading_matrix <- as.data.frame(ddrad_pca$loadings[, 1:2, drop = FALSE])
 colnames(ddrad_loading_matrix) <- paste0("PC", seq_len(ncol(ddrad_loading_matrix)))
 ddrad_loading_matrix$marker <- rownames(ddrad_loading_matrix)
 ddrad_loading_matrix$marker_index <- seq_len(nrow(ddrad_loading_matrix))
 
-ddrad_loading_table <- tidyr::pivot_longer(
-        ddrad_loading_matrix[, c("marker", "PC1", "PC2")],
-        cols = c("PC1", "PC2"),
-        names_to = "axis",
-        values_to = "loading"
+ddrad_loading_table <- rbind(
+        data.frame(marker = ddrad_loading_matrix$marker, axis = "PC1", loading = ddrad_loading_matrix$PC1),
+        data.frame(marker = ddrad_loading_matrix$marker, axis = "PC2", loading = ddrad_loading_matrix$PC2)
 )
 ddrad_loading_table$abs_loading <- abs(ddrad_loading_table$loading)
 ddrad_loading_table <- ddrad_loading_table %>%
@@ -180,24 +177,29 @@ ddrad_loading_table <- ddrad_loading_table %>%
         dplyr::slice_head(n = 20) %>%
         dplyr::ungroup()
 
-ddrad_loading_plot_data <- data.frame(
-        marker_index = rep(ddrad_loading_matrix$marker_index, times = 4),
-        axis = rep(c("PC1", "PC2", "PC3", "PC4"), each = nrow(ddrad_loading_matrix)),
-        loading = c(ddrad_loading_matrix$PC1, ddrad_loading_matrix$PC2, ddrad_loading_matrix$PC3, ddrad_loading_matrix$PC4)
-)
+ddrad_loading_plot_pc1 <- ggplot(ddrad_loading_matrix, aes(x = marker_index, y = PC1)) +
+        geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey70") +
+        geom_point(size = 0.35, alpha = 0.35, colour = "#1B9E77") +
+        labs(title = "PC1", x = "Marker index", y = "Loading")
 
-ddrad_loading_plot <- ggplot(ddrad_loading_plot_data, aes(x = marker_index, y = loading)) +
-        geom_bin2d(bins = 70) +
-        facet_wrap(~axis, scales = "free_y") +
-        scale_fill_viridis_c(option = "C", name = "Count") +
-        labs(title = "ddRAD PCA loading distributions", x = "Marker index", y = "Loading") +
+ddrad_loading_plot_pc2 <- ggplot(ddrad_loading_matrix, aes(x = marker_index, y = PC2)) +
+        geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey70") +
+        geom_point(size = 0.35, alpha = 0.35, colour = "#1B9E77") +
+        labs(title = "PC2", x = "Marker index", y = "Loading")
+
+ddrad_loading_plot <- cowplot::plot_grid(
+        ddrad_loading_plot_pc1,
+        ddrad_loading_plot_pc2,
+        ncol = 2,
+        align = "hv"
+) +
         theme_minimal(base_size = 11)
 ddrad_loading_plot
 ```
 
 ## Plot ddRAD PC1 and PC2
 
-Start with plotting the first two axes, because this is usually the easiest place to see the dominant clustering pattern.
+Start with plotting the first two axes, because these usually capture the most variation.
 
 ```{r ddrad-pca-plot-pc12, fig.width=6.5, fig.height=5}
 ddrad_pca_plot_pc12 <- ggplot(ddrad_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_level)) +
@@ -336,21 +338,18 @@ wgs_eigenvalue_plot
 
 ## Plot WGS loadings
 
-This plot shows the full distribution of WGS marker loadings across the first four PCA axes. Broad dense bands near zero indicate many small contributions, while sharp spikes reveal loci with unusually strong influence on a given axis. The exported top-loading table still summarizes the strongest markers on PC1 and PC2.
+This plot shows the WGS marker loadings for the first two PCA axes. Values far from zero mark loci that contribute more strongly to that axis. The loading table lists the 20 markers with the strongest absolute contributions on PC1 and PC2.
 
-Question: Compared with ddRAD, does the WGS loading pattern look more diffuse or more dominated by a few strong peaks?
 
 ```{r wgs-loadings, fig.width=9, fig.height=6}
-wgs_loading_matrix <- as.data.frame(wgs_pca$loadings[, 1:4, drop = FALSE])
+wgs_loading_matrix <- as.data.frame(wgs_pca$loadings[, 1:2, drop = FALSE])
 colnames(wgs_loading_matrix) <- paste0("PC", seq_len(ncol(wgs_loading_matrix)))
 wgs_loading_matrix$marker <- rownames(wgs_loading_matrix)
 wgs_loading_matrix$marker_index <- seq_len(nrow(wgs_loading_matrix))
 
-wgs_loading_table <- tidyr::pivot_longer(
-        wgs_loading_matrix[, c("marker", "PC1", "PC2")],
-        cols = c("PC1", "PC2"),
-        names_to = "axis",
-        values_to = "loading"
+wgs_loading_table <- rbind(
+        data.frame(marker = wgs_loading_matrix$marker, axis = "PC1", loading = wgs_loading_matrix$PC1),
+        data.frame(marker = wgs_loading_matrix$marker, axis = "PC2", loading = wgs_loading_matrix$PC2)
 )
 wgs_loading_table$abs_loading <- abs(wgs_loading_table$loading)
 wgs_loading_table <- wgs_loading_table %>%
@@ -359,24 +358,30 @@ wgs_loading_table <- wgs_loading_table %>%
         dplyr::slice_head(n = 20) %>%
         dplyr::ungroup()
 
-wgs_loading_plot_data <- data.frame(
-        marker_index = rep(wgs_loading_matrix$marker_index, times = 4),
-        axis = rep(c("PC1", "PC2", "PC3", "PC4"), each = nrow(wgs_loading_matrix)),
-        loading = c(wgs_loading_matrix$PC1, wgs_loading_matrix$PC2, wgs_loading_matrix$PC3, wgs_loading_matrix$PC4)
-)
+wgs_loading_plot_pc1 <- ggplot(wgs_loading_matrix, aes(x = marker_index, y = PC1)) +
+        geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey70") +
+        geom_point(size = 0.35, alpha = 0.35, colour = "#7570B3") +
+        labs(title = "PC1", x = "Marker index", y = "Loading")
 
-wgs_loading_plot <- ggplot(wgs_loading_plot_data, aes(x = marker_index, y = loading)) +
-        geom_bin2d(bins = 70) +
-        facet_wrap(~axis, scales = "free_y") +
-        scale_fill_viridis_c(option = "C", name = "Count") +
-        labs(title = "WGS PCA loading distributions", x = "Marker index", y = "Loading") +
+wgs_loading_plot_pc2 <- ggplot(wgs_loading_matrix, aes(x = marker_index, y = PC2)) +
+        geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey70") +
+        geom_point(size = 0.35, alpha = 0.35, colour = "#7570B3") +
+        labs(title = "PC2", x = "Marker index", y = "Loading")
+
+
+wgs_loading_plot <- cowplot::plot_grid(
+        wgs_loading_plot_pc1,
+        wgs_loading_plot_pc2,
+        ncol = 2,
+        align = "hv"
+) +
         theme_minimal(base_size = 11)
 wgs_loading_plot
 ```
 
 ## Plot WGS PCA
 
-These four panels show how individuals cluster in WGS space across several pairs of principal components, so the full WGS pattern can be inspected in one place.
+These four panels show how individuals cluster in WGS space across several pairs of principal components.
 
 ```{r wgs-pca-plot, fig.width=10, fig.height=8}
 wgs_pca_plot_pc12 <- ggplot(wgs_scores, aes(x = PC1, y = PC2, colour = pop, shape = elevation_level)) +
@@ -510,7 +515,7 @@ fst_panel
 
 ##  Compare ddRAD and WGS pairwise Fst
 
-Here we ask whether population pairs that are highly differentiated in WGS are also highly differentiated in ddRAD. does ddRAD captures the broad population differentiation pattern as well as WGS.
+Whether population pairs that are highly differentiated in WGS are also highly differentiated in ddRAD? 
 
 
 ```{r fst-correlation-table}
@@ -545,7 +550,7 @@ fst_correlation_plot
 
 ## Prepare Mantel test matrices
 
-Create the elevation distance matrix and save the geographic and elevation distance tables used in the Mantel tests.
+Create the geographic and elevation distance tables used in the Mantel tests.
 
 ```{r mantel-inputs}
 elevation_matrix <- as.matrix(dist(elevation_table$elevation_m, method = "euclidean", diag = TRUE))
@@ -620,7 +625,7 @@ wgs_geo_plot <- ggplot(wgs_geo_pairs, aes(x = geographic_distance_km, y = fst)) 
 wgs_geo_plot
 ```
 
-## Isolation by elevation after accounting for geography
+## Isolation by elevation after accounting for geographic distance
 
 This test asks whether elevation differences are associated with genetic differentiation after accounting for geographic distance. 
 
