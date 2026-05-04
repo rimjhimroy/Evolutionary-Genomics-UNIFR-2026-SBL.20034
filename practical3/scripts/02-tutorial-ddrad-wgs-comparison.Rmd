@@ -165,10 +165,12 @@ ddrad_loading_matrix <- as.data.frame(ddrad_pca$loadings[, 1:2, drop = FALSE])
 colnames(ddrad_loading_matrix) <- paste0("PC", seq_len(ncol(ddrad_loading_matrix)))
 ddrad_loading_matrix$marker <- rownames(ddrad_loading_matrix)
 ddrad_loading_matrix$marker_index <- seq_len(nrow(ddrad_loading_matrix))
+ddrad_loading_matrix$scaffold <- ddrad_vcf@fix[ddrad_loading_matrix$marker_index, "CHROM"]
+ddrad_loading_matrix$position <- as.numeric(ddrad_vcf@fix[ddrad_loading_matrix$marker_index, "POS"])
 
 ddrad_loading_table <- rbind(
-        data.frame(marker = ddrad_loading_matrix$marker, axis = "PC1", loading = ddrad_loading_matrix$PC1),
-        data.frame(marker = ddrad_loading_matrix$marker, axis = "PC2", loading = ddrad_loading_matrix$PC2)
+        data.frame(marker = ddrad_loading_matrix$marker, scaffold = ddrad_loading_matrix$scaffold, position = ddrad_loading_matrix$position, axis = "PC1", loading = ddrad_loading_matrix$PC1),
+        data.frame(marker = ddrad_loading_matrix$marker, scaffold = ddrad_loading_matrix$scaffold, position = ddrad_loading_matrix$position, axis = "PC2", loading = ddrad_loading_matrix$PC2)
 )
 ddrad_loading_table$abs_loading <- abs(ddrad_loading_table$loading)
 ddrad_loading_table <- ddrad_loading_table %>%
@@ -195,6 +197,7 @@ ddrad_loading_plot <- cowplot::plot_grid(
 ) +
         theme_minimal(base_size = 11)
 ddrad_loading_plot
+ddrad_loading_table
 ```
 
 ## Plot ddRAD PC1 and PC2
@@ -269,7 +272,7 @@ ddrad_other_pca_plot
 
 ## Prepare WGS metadata
 
-Repeat the same metadata preparation steps for the WGS dataset so the two marker systems are handled in parallel.
+Repeat the same metadata preparation steps for the WGS dataset.
 
 ```{r wgs-metadata}
 wgs_genlight <- vcfR2genlight(wgs_vcf)
@@ -346,10 +349,12 @@ wgs_loading_matrix <- as.data.frame(wgs_pca$loadings[, 1:2, drop = FALSE])
 colnames(wgs_loading_matrix) <- paste0("PC", seq_len(ncol(wgs_loading_matrix)))
 wgs_loading_matrix$marker <- rownames(wgs_loading_matrix)
 wgs_loading_matrix$marker_index <- seq_len(nrow(wgs_loading_matrix))
+wgs_loading_matrix$scaffold <- wgs_vcf@fix[wgs_loading_matrix$marker_index, "CHROM"]
+wgs_loading_matrix$position <- as.numeric(wgs_vcf@fix[wgs_loading_matrix$marker_index, "POS"])
 
 wgs_loading_table <- rbind(
-        data.frame(marker = wgs_loading_matrix$marker, axis = "PC1", loading = wgs_loading_matrix$PC1),
-        data.frame(marker = wgs_loading_matrix$marker, axis = "PC2", loading = wgs_loading_matrix$PC2)
+        data.frame(marker = wgs_loading_matrix$marker, scaffold = wgs_loading_matrix$scaffold, position = wgs_loading_matrix$position, axis = "PC1", loading = wgs_loading_matrix$PC1),
+        data.frame(marker = wgs_loading_matrix$marker, scaffold = wgs_loading_matrix$scaffold, position = wgs_loading_matrix$position, axis = "PC2", loading = wgs_loading_matrix$PC2)
 )
 wgs_loading_table$abs_loading <- abs(wgs_loading_table$loading)
 wgs_loading_table <- wgs_loading_table %>%
@@ -377,6 +382,7 @@ wgs_loading_plot <- cowplot::plot_grid(
 ) +
         theme_minimal(base_size = 11)
 wgs_loading_plot
+wgs_loading_table
 ```
 
 ## Plot WGS PCA
@@ -470,29 +476,23 @@ ddrad_fst
 wgs_fst
 ```
 
-## Prepare Fst heatmap tables
-
-Convert both Fst matrices to long format so they can be plotted as heatmaps.
-
-```{r fst-heatmap-data}
-ddrad_fst_long <- as.data.frame(as.table(ddrad_fst), stringsAsFactors = FALSE)
-names(ddrad_fst_long) <- c("population_1", "population_2", "value")
-ddrad_fst_long$population_1 <- factor(ddrad_fst_long$population_1, levels = reference_order)
-ddrad_fst_long$population_2 <- factor(ddrad_fst_long$population_2, levels = rev(reference_order))
-
-wgs_fst_long <- as.data.frame(as.table(wgs_fst), stringsAsFactors = FALSE)
-names(wgs_fst_long) <- c("population_1", "population_2", "value")
-wgs_fst_long$population_1 <- factor(wgs_fst_long$population_1, levels = reference_order)
-wgs_fst_long$population_2 <- factor(wgs_fst_long$population_2, levels = rev(reference_order))
-```
-
 ## Plot Fst heatmap
 
 Plot the relative genetic differentiation among populations in the ddRAD dataset and WGS dataset as heatmaps, using the same colour scale for direct comparison.
 
 ```{r fst-heatmap, fig.width=11, fig.height=5.5}
-fst_limits <- range(c(ddrad_fst_long$value, wgs_fst_long$value), na.rm = TRUE)
-ddrad_heatmap <- ggplot(ddrad_fst_long, aes(x = population_1, y = population_2, fill = value)) +
+ddrad_heatmap_data <- as.data.frame(as.table(ddrad_fst), stringsAsFactors = FALSE)
+names(ddrad_heatmap_data) <- c("population_1", "population_2", "value")
+ddrad_heatmap_data$population_1 <- factor(ddrad_heatmap_data$population_1, levels = reference_order)
+ddrad_heatmap_data$population_2 <- factor(ddrad_heatmap_data$population_2, levels = rev(reference_order))
+
+wgs_heatmap_data <- as.data.frame(as.table(wgs_fst), stringsAsFactors = FALSE)
+names(wgs_heatmap_data) <- c("population_1", "population_2", "value")
+wgs_heatmap_data$population_1 <- factor(wgs_heatmap_data$population_1, levels = reference_order)
+wgs_heatmap_data$population_2 <- factor(wgs_heatmap_data$population_2, levels = rev(reference_order))
+
+fst_limits <- range(c(ddrad_heatmap_data$value, wgs_heatmap_data$value), na.rm = TRUE)
+ddrad_heatmap <- ggplot(ddrad_heatmap_data, aes(x = population_1, y = population_2, fill = value)) +
         geom_tile(colour = "white", linewidth = 0.35) +
         geom_text(aes(label = paste(format(round(value, 3), nsmall = 3))), size = 3) +
         scale_fill_gradient(low = "#F7FBFF", high = "#08306B", limits = fst_limits) +
@@ -500,7 +500,7 @@ ddrad_heatmap <- ggplot(ddrad_fst_long, aes(x = population_1, y = population_2, 
         theme(axis.text.x = element_text(angle = 45, hjust = 1), panel.grid = element_blank())
 
 
-wgs_heatmap <- ggplot(wgs_fst_long, aes(x = population_1, y = population_2, fill = value)) +
+wgs_heatmap <- ggplot(wgs_heatmap_data, aes(x = population_1, y = population_2, fill = value)) +
         geom_tile(colour = "white", linewidth = 0.35) +
         geom_text(aes(label = paste(format(round(value, 3), nsmall = 3))), size = 3) +
         scale_fill_gradient(low = "#F7FBFF", high = "#08306B", limits = fst_limits) +
