@@ -466,22 +466,16 @@ It does this in three ways:
 
 The script writes to `outputs/02-ddrad-wgs-population-comparison/` and creates:
 
-- `pca_overview.png`
+- `ddrad_pca.png`
+- `wgs_pca.png`
 - `pairwise_fst_heatmaps.png`
 - `ddrad_vs_wgs_fst_correlation.png`
-- `ddrad_vs_wgs_fst_pairs.tsv`
 - `mantel_relationships.png`
-- `ddrad_pca_explained_variance.tsv`
-- `wgs_pca_explained_variance.tsv`
-- `ddrad_pairwise_fst.tsv`
-- `wgs_pairwise_fst.tsv`
-- `geographic_distance_matrix.tsv`
-- `elevation_distance_matrix.tsv`
 - `mantel_test_summary.tsv`
 
 ### How to read the figures
 
-- `pca_overview.png`: each point is one individual; compare whether ddRAD and WGS separate the populations in similar ways
+- `ddrad_pca.png` and `wgs_pca.png`: each point is one individual; compare whether ddRAD and WGS separate the populations in similar ways
 - `pairwise_fst_heatmaps.png`: darker values mean stronger genetic differentiation between populations
 - `ddrad_vs_wgs_fst_correlation.png`: asks whether the two marker systems rank pairwise population differentiation similarly
 - `mantel_relationships.png`: each point is one pair of populations; the plots ask whether distance or elevation contrast is associated with stronger differentiation
@@ -518,11 +512,10 @@ It calculates:
 
 The script writes to `outputs/03-scaffold1-window-scan/` and creates:
 
-- `wgs_scaffold1_window_stats.tsv`
-- `ddrad_scaffold1_window_stats.tsv`
-- `wgs_scaffold1_summary.png`
-- `ddrad_scaffold1_summary.png`
-- `ddrad_vs_wgs_fst.png`
+- `wgs_scaffold1_window_fst.tsv`
+- `ddrad_scaffold1_window_fst.tsv`
+- `wgs_scaffold1_fst.png`
+- `ddrad_scaffold1_fst.png`
 
 
 ### Questions to think about

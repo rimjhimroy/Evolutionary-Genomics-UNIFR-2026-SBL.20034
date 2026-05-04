@@ -71,7 +71,8 @@ plot_legend_labels <- c(
 
 ## Window summary tables
 
-For each dataset we build one table with the window start, window end, midpoint, number of SNPs, $F_{ST}$, $pi$ for each population, and Dxy. The code is written out in full so each step can be read directly.
+For each dataset we build one table with the window start, window end, midpoint, number of SNPs, $F_{ST}$, $pi$ for each population, and Dxy.
+
 
 ## ddRAD step 1: read the VCF and identify samples
 
@@ -151,20 +152,12 @@ ddrad_stats$dataset <- "ddRAD"
 ddrad_stats <- ddrad_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst", "pi_A2G", "pi_A2S", "dxy")]
 ddrad_stats$pi_overall <- rowMeans(ddrad_stats[, c("pi_A2G", "pi_A2S")], na.rm = TRUE)
 
-ddrad_loess <- list(
-  fst = loess(ddrad_stats$fst ~ seq_along(ddrad_stats$fst), span = 0.15, na.action = na.exclude),
-  pi_A2G = loess(ddrad_stats$pi_A2G ~ seq_along(ddrad_stats$pi_A2G), span = 0.15, na.action = na.exclude),
-  pi_A2S = loess(ddrad_stats$pi_A2S ~ seq_along(ddrad_stats$pi_A2S), span = 0.15, na.action = na.exclude),
-  pi_overall = loess(ddrad_stats$pi_overall ~ seq_along(ddrad_stats$pi_overall), span = 0.15, na.action = na.exclude),
-  dxy = loess(ddrad_stats$dxy ~ seq_along(ddrad_stats$dxy), span = 0.15, na.action = na.exclude)
-)
-
 ddrad_smooth <- list(
-  fst = predict(ddrad_loess$fst),
-  pi_A2G = predict(ddrad_loess$pi_A2G),
-  pi_A2S = predict(ddrad_loess$pi_A2S),
-  pi_overall = predict(ddrad_loess$pi_overall),
-  dxy = predict(ddrad_loess$dxy)
+  fst = predict(loess(fst ~ midpoint_mb, data = ddrad_stats, span = 0.15, na.action = na.exclude)),
+  pi_A2G = predict(loess(pi_A2G ~ midpoint_mb, data = ddrad_stats, span = 0.15, na.action = na.exclude)),
+  pi_A2S = predict(loess(pi_A2S ~ midpoint_mb, data = ddrad_stats, span = 0.15, na.action = na.exclude)),
+  pi_overall = predict(loess(pi_overall ~ midpoint_mb, data = ddrad_stats, span = 0.15, na.action = na.exclude)),
+  dxy = predict(loess(dxy ~ midpoint_mb, data = ddrad_stats, span = 0.15, na.action = na.exclude))
 )
 
 ddrad_fst <- ddrad_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst")]
@@ -180,53 +173,39 @@ write.table(
 head(ddrad_fst)
 ```
 
-## Plot the ddRAD scan
+## ddRAD step 5: plot the ddRAD window scan
 
-This plot is interpreted in the same way as the WGS scan, but ddRAD often looks noisier because fewer markers are available.
+Now plot the ddRAD window summary so you can see where $F_{ST}$, $pi$, and Dxy rise and fall along scaffold 1.
 
 ```{r ddrad-plot, fig.width=9, fig.height=4}
-png(file.path(output_dir, "ddrad_scaffold1_fst.png"), width = 9, height = 4, units = "in", res = 320)
+ddrad_plot_file <- file.path(output_dir, "ddrad_scaffold1_fst.png")
+
+png(ddrad_plot_file, width = 9, height = 4, units = "in", res = 320)
 plot(
-  ddrad_fst$fst,
+  ddrad_stats$midpoint_mb,
+  ddrad_stats$fst,
   ylim = c(0, 1),
-  main = "scaffold 1 - ddRAD",
-  ylab = "Fst_A2G.A2S",
-  xlab = "window_start_pos"
+  main = "Scaffold 1 - ddRAD",
+  ylab = "FST",
+  xlab = "Position on scaffold 1 (Mb)"
 )
-lines(ddrad_smooth$fst, col = plot_colors["fst"], lwd = 3)
+lines(ddrad_stats$midpoint_mb, ddrad_smooth$fst, col = plot_colors["fst"], lwd = 3)
+lines(ddrad_stats$midpoint_mb, ddrad_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
+lines(ddrad_stats$midpoint_mb, ddrad_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
+lines(ddrad_stats$midpoint_mb, ddrad_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
+lines(ddrad_stats$midpoint_mb, ddrad_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
 legend(
   "topright",
-  legend = plot_legend_labels["fst"],
-  col = plot_colors["fst"],
+  legend = plot_legend_labels,
+  col = plot_colors,
   lwd = 3,
   bty = "n",
-  cex = 0.85
+  cex = 0.75
 )
 dev.off()
 
-plot(
-  ddrad_fst$fst,
-  ylim = c(0, 1),
-  main = "scaffold 1 - ddRAD",
-  ylab = "Fst_A2G.A2S",
-  xlab = "window_start_pos"
-)
-lines(ddrad_smooth$fst, col = plot_colors["fst"], lwd = 3)
-legend(
-  "topright",
-  legend = plot_legend_labels["fst"],
-  col = plot_colors["fst"],
-  lwd = 3,
-  bty = "n",
-  cex = 0.85
-)
+knitr::include_graphics(ddrad_plot_file)
 ```
-
-ddRAD interpretation:
-
-- Expect more irregular point-to-point variation than in WGS.
-- If a major peak appears in both datasets, that region is a stronger candidate for real differentiation.
-- If a peak appears only in ddRAD, check whether sparse marker coverage could explain it.
 
 ## WGS step 1: read the VCF and identify samples
 
@@ -306,20 +285,12 @@ wgs_stats$dataset <- "WGS"
 wgs_stats <- wgs_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst", "pi_A2G", "pi_A2S", "dxy")]
 wgs_stats$pi_overall <- rowMeans(wgs_stats[, c("pi_A2G", "pi_A2S")], na.rm = TRUE)
 
-wgs_loess <- list(
-  fst = loess(wgs_stats$fst ~ seq_along(wgs_stats$fst), span = 0.15, na.action = na.exclude),
-  pi_A2G = loess(wgs_stats$pi_A2G ~ seq_along(wgs_stats$pi_A2G), span = 0.15, na.action = na.exclude),
-  pi_A2S = loess(wgs_stats$pi_A2S ~ seq_along(wgs_stats$pi_A2S), span = 0.15, na.action = na.exclude),
-  pi_overall = loess(wgs_stats$pi_overall ~ seq_along(wgs_stats$pi_overall), span = 0.15, na.action = na.exclude),
-  dxy = loess(wgs_stats$dxy ~ seq_along(wgs_stats$dxy), span = 0.15, na.action = na.exclude)
-)
-
 wgs_smooth <- list(
-  fst = predict(wgs_loess$fst),
-  pi_A2G = predict(wgs_loess$pi_A2G),
-  pi_A2S = predict(wgs_loess$pi_A2S),
-  pi_overall = predict(wgs_loess$pi_overall),
-  dxy = predict(wgs_loess$dxy)
+  fst = predict(loess(fst ~ midpoint_mb, data = wgs_stats, span = 0.15, na.action = na.exclude)),
+  pi_A2G = predict(loess(pi_A2G ~ midpoint_mb, data = wgs_stats, span = 0.15, na.action = na.exclude)),
+  pi_A2S = predict(loess(pi_A2S ~ midpoint_mb, data = wgs_stats, span = 0.15, na.action = na.exclude)),
+  pi_overall = predict(loess(pi_overall ~ midpoint_mb, data = wgs_stats, span = 0.15, na.action = na.exclude)),
+  dxy = predict(loess(dxy ~ midpoint_mb, data = wgs_stats, span = 0.15, na.action = na.exclude))
 )
 
 wgs_fst <- wgs_stats[, c("dataset", "start_pos", "end_pos", "midpoint_mb", "n_snps", "fst")]
@@ -335,159 +306,37 @@ write.table(
 head(wgs_fst)
 ```
 
-## Plot the WGS scan
+## WGS step 5: plot the WGS window scan
 
-The points show individual windows and the smooth line shows the broad trend across the scaffold.
+Now plot the WGS window summary to compare the positions of peaks and troughs along the same scaffold.
 
 ```{r wgs-plot, fig.width=9, fig.height=4}
-png(file.path(output_dir, "wgs_scaffold1_fst.png"), width = 9, height = 4, units = "in", res = 320)
+wgs_plot_file <- file.path(output_dir, "wgs_scaffold1_fst.png")
+
+png(wgs_plot_file, width = 9, height = 4, units = "in", res = 320)
 plot(
-  wgs_fst$fst,
-  ylim = c(0, 1),
-  main = "scaffold 1 - wgs",
-  ylab = "Fst_A2G.A2S",
-  xlab = "window_start_pos"
+  wgs_stats$midpoint_mb,
+  wgs_stats$fst,
+  ylim = c(0, 3.1),
+  main = "Scaffold 1 - WGS",
+  ylab = "FST",
+  xlab = "Position on scaffold 1 (Mb)"
 )
-lines(wgs_smooth$fst, col = plot_colors["fst"], lwd = 3)
+lines(wgs_stats$midpoint_mb, wgs_smooth$fst, col = plot_colors["fst"], lwd = 3)
+lines(wgs_stats$midpoint_mb, wgs_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
+lines(wgs_stats$midpoint_mb, wgs_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
+lines(wgs_stats$midpoint_mb, wgs_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
+lines(wgs_stats$midpoint_mb, wgs_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
 legend(
   "topright",
-  legend = plot_legend_labels["fst"],
-  col = plot_colors["fst"],
+  legend = plot_legend_labels,
+  col = plot_colors,
   lwd = 3,
   bty = "n",
-  cex = 0.85
+  cex = 0.75
 )
 dev.off()
 
-plot(
-  wgs_fst$fst,
-  ylim = c(0, 1),
-  main = "scaffold 1 - wgs",
-  ylab = "Fst_A2G.A2S",
-  xlab = "window_start_pos"
-)
-lines(wgs_smooth$fst, col = plot_colors["fst"], lwd = 3)
-legend(
-  "topright",
-  legend = plot_legend_labels["fst"],
-  col = plot_colors["fst"],
-  lwd = 3,
-  bty = "n",
-  cex = 0.85
-)
-```
-
-WGS interpretation:
-
-- Look for clusters of high windows rather than a single isolated point.
-- Regions close to $F_{ST} = 0$ show little differentiation between A2G and A2S.
-
-## Add pi and Dxy to the window scan plots
-
-We can use the same window objects to overlay within-population diversity ($pi$) and between-population divergence (Dxy) on the same scaffold position axis.
-
-```{r wgs-ddrad-combined-stats-tables}
-head(ddrad_stats)
-head(wgs_stats)
-```
-
-These curves are drawn on their raw scales, so the main goal is to compare where peaks and troughs occur along the scaffold.
-
-```{r combined-ddrad-plot, fig.width=9, fig.height=4}
-plot(
-  ddrad_stats$fst,
-  ylim = c(0, 1),
-  main = "scaffold 1 - ddRAD",
-  ylab = "Fst_A2G.A2S",
-  xlab = "window_start_pos"
-)
-lines(ddrad_smooth$fst, col = plot_colors["fst"], lwd = 3)
-lines(ddrad_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
-lines(ddrad_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
-lines(ddrad_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
-lines(ddrad_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
-legend(
-  "topright",
-  legend = unname(plot_legend_labels),
-  col = unname(plot_colors),
-  lwd = 3,
-  bty = "n",
-  cex = 0.8
-)
-```
-
-```{r combined-wgs-plot, fig.width=9, fig.height=4}
-plot(
-  wgs_stats$fst,
-  ylim = c(0, 3.1),
-  main = "scaffold 1 - wgs",
-  ylab = "Fst_A2G.A2S",
-  xlab = "window_start_pos"
-)
-lines(wgs_smooth$fst, col = plot_colors["fst"], lwd = 3)
-lines(wgs_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
-lines(wgs_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
-lines(wgs_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
-lines(wgs_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
-legend(
-  "topright",
-  legend = unname(plot_legend_labels),
-  col = unname(plot_colors),
-  lwd = 3,
-  bty = "n",
-  cex = 0.8
-)
-```
-
-## Compare WGS and ddRAD directly
-
-This final chunk keeps the same two-panel comparison, but now each panel overlays $F_{ST}$, $pi$, and Dxy.
-
-```{r compare-plots, fig.width=9, fig.height=15}
-old_par <- par(mfrow = c(2, 1))
-
-plot(
-  wgs_stats$fst,
-  ylim = c(0, 3.1),
-  main = "scaffold 1 - wgs",
-  ylab = "Fst_A2G.A2S",
-  xlab = "window_start_pos"
-)
-lines(wgs_smooth$fst, col = plot_colors["fst"], lwd = 3)
-lines(wgs_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
-lines(wgs_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
-lines(wgs_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
-lines(wgs_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
-legend(
-  "topright",
-  legend = unname(plot_legend_labels),
-  col = unname(plot_colors),
-  lwd = 3,
-  bty = "n",
-  cex = 0.75
-)
-
-plot(
-  ddrad_stats$fst,
-  ylim = c(0, 1),
-  main = "scaffold 1 - ddRAD",
-  ylab = "Fst_A2G.A2S",
-  xlab = "window_start_pos"
-)
-lines(ddrad_smooth$fst, col = plot_colors["fst"], lwd = 3)
-lines(ddrad_smooth$pi_A2G, col = plot_colors["pi_A2G"], lwd = 3)
-lines(ddrad_smooth$pi_A2S, col = plot_colors["pi_A2S"], lwd = 3)
-lines(ddrad_smooth$pi_overall, col = plot_colors["pi_overall"], lwd = 3)
-lines(ddrad_smooth$dxy, col = plot_colors["dxy"], lwd = 3)
-legend(
-  "topright",
-  legend = unname(plot_legend_labels),
-  col = unname(plot_colors),
-  lwd = 3,
-  bty = "n",
-  cex = 0.75
-)
-
-par(old_par)
+knitr::include_graphics(wgs_plot_file)
 ```
 
