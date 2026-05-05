@@ -105,10 +105,10 @@ model_choice_plot
 
 ## Choose the best K
 
-After inspecting the model-choice figure, replace the value below with the `K` you think best summarizes the data. Keep this as a deliberate student decision.
+After inspecting the model-choice figure, replace the value below with the `K` you think best summarizes the data.
 
 ```{r choose-best-k}
-# After looking at the model-choice figure above, replace 4 with the K you think is best.
+# After looking at the model-choice figure above, replace 5 with the K you think is best.
 best_k <- 5 # <- REPLACE THIS NUMBER WITH YOUR CHOICE
 
 best_k
